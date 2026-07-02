@@ -7,12 +7,19 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Official KFGQPC Uthmanic Script HAFS v22 (King Fahd Complex), self-hosted. */
+@font-face {
+	font-family: 'KFGQPC Uthmanic Hafs';
+	src: url('/fonts/UthmanicHafsV22.woff2') format('woff2');
+	font-display: swap;
+}
+
 /*
  * Semantic color tokens. Components only use these (via the @theme mapping
  * below), so the dark theme is a pure variable swap.
  */
 :root {
-	--arabic-font: 'Amiri Quran';
+	--arabic-font: 'KFGQPC Uthmanic Hafs';
 	--paper: #faf9f7;
 	--surface: #ffffff;
 	--edge: #e7e5e4;

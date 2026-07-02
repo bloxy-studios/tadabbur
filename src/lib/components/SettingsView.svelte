@@ -6,6 +6,7 @@
 	import Segmented from './Segmented.svelte';
 
 	const fontOptions: { value: ArabicFont; label: string }[] = [
+		{ value: 'uthmani', label: 'KFGQPC Uthmanic Hafs — Madinah Mushaf' },
 		{ value: 'amiri', label: 'Amiri Quran' },
 		{ value: 'scheherazade', label: 'Scheherazade New' },
 		{ value: 'noto', label: 'Noto Naskh Arabic' }

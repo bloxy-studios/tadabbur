@@ -4,9 +4,10 @@ import { dateKey } from './progress';
 
 export type SidebarView = 'surahs' | 'search' | 'notes' | 'settings';
 export type Theme = 'light' | 'dark' | 'system';
-export type ArabicFont = 'amiri' | 'scheherazade' | 'noto';
+export type ArabicFont = 'uthmani' | 'amiri' | 'scheherazade' | 'noto';
 
 export const arabicFontStacks: Record<ArabicFont, string> = {
+	uthmani: "'KFGQPC Uthmanic Hafs'",
 	amiri: "'Amiri Quran'",
 	scheherazade: "'Scheherazade New'",
 	noto: "'Noto Naskh Arabic'"
@@ -35,7 +36,7 @@ interface Prefs {
 
 const defaults: Prefs = {
 	theme: 'system',
-	arabicFont: 'amiri',
+	arabicFont: 'uthmani',
 	arabicSize: 2,
 	focusMode: false,
 	sidebarOpen: true,

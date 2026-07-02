@@ -33,8 +33,9 @@ verses are stored once with a `from`/`to` range.
 
 One language setting (English / Indonesia, via paraglide) drives the UI copy, which Quran
 translation is shown, and the tafsir sources (EN: Ibn Kathir; ID: Tafsir Kemenag + Ibn Kathir).
-Settings also offer light/dark/system themes, three self-hosted Arabic typefaces (Amiri Quran,
-Scheherazade New, Noto Naskh Arabic), Arabic text size, and a focus mode for Arabic-only reading.
+Settings also offer light/dark/system themes, four self-hosted Arabic typefaces (KFGQPC Uthmanic
+Hafs v22 — the official Madinah mushaf font, default — plus Amiri Quran, Scheherazade New, and
+Noto Naskh Arabic), Arabic text size, and a focus mode for Arabic-only reading.
 
 ## Developing
 
