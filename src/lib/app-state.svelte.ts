@@ -76,9 +76,13 @@ class AppState {
 		if (browser) localStorage.setItem(STORAGE_KEY, JSON.stringify(this.prefs));
 	}
 
+	constructor() {
+		if (browser) window.addEventListener('pagehide', this.#flushProgress);
+	}
+
 	setLastRead(surah: number, verse: number) {
 		this.lastRead = { surah, verse };
-		if (browser) localStorage.setItem(LAST_READ_KEY, JSON.stringify(this.lastRead));
+		this.#schedulePersist();
 	}
 
 	recordRead(surah: number, verse: number) {
@@ -105,8 +109,27 @@ class AppState {
 		for (const day of Object.keys(this.activity)) {
 			if (day < cutoffKey) delete this.activity[day];
 		}
+		this.#schedulePersist();
+	}
+
+	/**
+	 * Reading progress is recorded in memory immediately but persisted on a
+	 * debounce — synchronous JSON writes per newly visible verse were heavy
+	 * enough to be felt during surah navigation.
+	 */
+	#persistTimer: ReturnType<typeof setTimeout> | null = null;
+
+	#flushProgress = () => {
+		if (this.#persistTimer) clearTimeout(this.#persistTimer);
+		this.#persistTimer = null;
+		localStorage.setItem(LAST_READ_KEY, JSON.stringify(this.lastRead));
 		localStorage.setItem(ACTIVITY_KEY, JSON.stringify(this.activity));
 		localStorage.setItem(SURAH_PROGRESS_KEY, JSON.stringify(this.surahProgress));
+	};
+
+	#schedulePersist() {
+		if (!browser || this.#persistTimer) return;
+		this.#persistTimer = setTimeout(this.#flushProgress, 800);
 	}
 
 	/**

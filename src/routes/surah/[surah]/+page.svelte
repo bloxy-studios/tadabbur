@@ -5,6 +5,7 @@
 	import { dur } from '$lib/motion';
 	import { app } from '$lib/app-state.svelte';
 	import { player } from '$lib/player.svelte';
+	import { getSurah } from '$lib/quran/data';
 	import { chapterName } from '$lib/quran/locale';
 	import type { SurahData, Verse } from '$lib/quran/types';
 	import { m } from '$lib/paraglide/messages';
@@ -48,6 +49,14 @@
 	// Verse cards mount lazily near the viewport (see lazy-cards.ts); only
 	// the first few render eagerly for SSR and instant first paint.
 	const EAGER_COUNT = 12;
+
+	// Keyboard jumps ([ / ]) get no hover preload — warm the neighbors so
+	// they always land from memory, ahead of the slow full-sweep prefetch.
+	$effect(() => {
+		const n = data.surah;
+		if (n < 114) void getSurah(fetch, n + 1);
+		if (n > 1) void getSurah(fetch, n - 1);
+	});
 
 	let main: HTMLElement;
 
@@ -253,13 +262,12 @@
 		{/if}
 
 		{#if surahData}
-			{#key surahData.surah}
-				<div in:fade={{ duration: dur(150) }}>
-					{#each surahData.verses as verse (verse.key)}
-						<VerseCard surah={surahData.surah} {verse} eager={verse.n <= EAGER_COUNT} />
-					{/each}
-				</div>
-			{/key}
+			<!-- No transition here on purpose: [ / ] surah jumps must feel instant. -->
+			<div in:fade={{ duration: dur(120) }}>
+				{#each surahData.verses as verse (verse.key)}
+					<VerseCard surah={surahData.surah} {verse} eager={verse.n <= EAGER_COUNT} />
+				{/each}
+			</div>
 		{:else}
 			{#each skeletonRows as i (i)}
 				<div class="border-edge-soft animate-pulse border-b py-6">
