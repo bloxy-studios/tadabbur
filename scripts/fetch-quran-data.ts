@@ -1,0 +1,234 @@
+/**
+ * Downloads Quran data and builds static per-surah JSON served from /static.
+ * Run: bun run scripts/fetch-quran-data.ts
+ *
+ * Sources:
+ * - Arabic (Uthmani), EN/ID translations, chapter metadata, EN tafsir: quran.com API v4
+ * - ID tafsir (Tafsir Kemenag): equran.id API v2
+ *
+ * Resources are selected by exact name match against the live resource lists
+ * (never hardcoded-by-guess); the chosen IDs are logged and verified.
+ */
+
+const QURAN_API = 'https://api.quran.com/api/v4';
+const EQURAN_API = 'https://equran.id/api/v2';
+const OUT = new URL('../static', import.meta.url).pathname;
+
+const WANTED = {
+	translations: [
+		{ language: 'english', name: 'Saheeh International' },
+		{ language: 'indonesian', name: 'Indonesian Islamic Affairs Ministry' }
+	],
+	tafsirEn: { language: 'english', name: 'Ibn Kathir (Abridged)' }
+};
+
+const TOTAL_VERSES = 6236;
+const SURAH_COUNT = 114;
+
+async function getJson<T>(url: string, attempt = 1): Promise<T> {
+	const res = await fetch(url);
+	if (!res.ok) {
+		if (attempt < 4) {
+			await new Promise((r) => setTimeout(r, attempt * 1500));
+			return getJson(url, attempt + 1);
+		}
+		throw new Error(`${res.status} ${res.statusText} for ${url}`);
+	}
+	return res.json() as Promise<T>;
+}
+
+async function pool<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+	const results: R[] = new Array(items.length);
+	let i = 0;
+	await Promise.all(
+		Array.from({ length: Math.min(limit, items.length) }, async () => {
+			while (i < items.length) {
+				const idx = i++;
+				results[idx] = await fn(items[idx]);
+			}
+		})
+	);
+	return results;
+}
+
+function write(path: string, data: unknown) {
+	return Bun.write(`${OUT}/${path}`, JSON.stringify(data));
+}
+
+/** Strip quran.com footnote markers like <sup foot_note=195932>1</sup>. */
+function cleanTranslation(text: string): string {
+	return text.replace(/<sup[^>]*>.*?<\/sup>/g, '').trim();
+}
+
+// --- 1. Resolve resource IDs by exact name ---------------------------------
+
+interface Resource {
+	id: number;
+	name: string;
+	language_name: string;
+}
+
+const { translations } = await getJson<{ translations: Resource[] }>(
+	`${QURAN_API}/resources/translations`
+);
+const { tafsirs } = await getJson<{ tafsirs: Resource[] }>(`${QURAN_API}/resources/tafsirs`);
+
+const pick = (list: Resource[], want: { language: string; name: string }) => {
+	const found = list.find((r) => r.language_name === want.language && r.name === want.name);
+	if (!found) throw new Error(`Resource not found: ${want.name} (${want.language})`);
+	console.log(`✓ ${want.language}: "${found.name}" (id ${found.id})`);
+	return found;
+};
+
+const enTranslation = pick(translations, WANTED.translations[0]);
+const idTranslation = pick(translations, WANTED.translations[1]);
+const enTafsir = pick(tafsirs, WANTED.tafsirEn);
+console.log(`✓ indonesian tafsir: "Tafsir Kemenag" via equran.id`);
+
+// --- 2. Chapters metadata (EN + ID names) -----------------------------------
+
+interface ApiChapter {
+	id: number;
+	revelation_place: string;
+	revelation_order: number;
+	bismillah_pre: boolean;
+	name_simple: string;
+	name_arabic: string;
+	verses_count: number;
+	pages: [number, number];
+	translated_name: { name: string };
+}
+
+const [{ chapters: chaptersEn }, { chapters: chaptersId }] = await Promise.all([
+	getJson<{ chapters: ApiChapter[] }>(`${QURAN_API}/chapters?language=en`),
+	getJson<{ chapters: ApiChapter[] }>(`${QURAN_API}/chapters?language=id`)
+]);
+
+const chapters = chaptersEn.map((c, i) => ({
+	number: c.id,
+	nameArabic: c.name_arabic,
+	nameSimple: c.name_simple,
+	nameEn: c.translated_name.name,
+	nameId: chaptersId[i].translated_name.name,
+	revelationPlace: c.revelation_place,
+	revelationOrder: c.revelation_order,
+	bismillahPre: c.bismillah_pre,
+	versesCount: c.verses_count,
+	pages: c.pages
+}));
+
+if (chapters.length !== SURAH_COUNT)
+	throw new Error(`Expected 114 chapters, got ${chapters.length}`);
+await write('quran/chapters.json', chapters);
+console.log(`✓ chapters.json (${chapters.length} surahs)`);
+
+// --- 3. Verses per surah -----------------------------------------------------
+
+interface ApiVerse {
+	verse_number: number;
+	verse_key: string;
+	text_uthmani: string;
+	page_number: number;
+	juz_number: number;
+	translations: { resource_id: number; text: string }[];
+}
+
+let verseTotal = 0;
+
+await pool(chapters, 6, async (chapter) => {
+	const verses: ApiVerse[] = [];
+	let page = 1;
+	while (true) {
+		const data = await getJson<{ verses: ApiVerse[]; pagination: { next_page: number | null } }>(
+			`${QURAN_API}/verses/by_chapter/${chapter.number}?fields=text_uthmani&translations=${enTranslation.id},${idTranslation.id}&per_page=50&page=${page}`
+		);
+		verses.push(...data.verses);
+		if (!data.pagination.next_page) break;
+		page = data.pagination.next_page;
+	}
+	if (verses.length !== chapter.versesCount) {
+		throw new Error(
+			`Surah ${chapter.number}: expected ${chapter.versesCount} verses, got ${verses.length}`
+		);
+	}
+	verseTotal += verses.length;
+	await write(`quran/${chapter.number}.json`, {
+		surah: chapter.number,
+		verses: verses.map((v) => ({
+			n: v.verse_number,
+			key: v.verse_key,
+			arabic: v.text_uthmani,
+			page: v.page_number,
+			juz: v.juz_number,
+			en: cleanTranslation(
+				v.translations.find((t) => t.resource_id === enTranslation.id)?.text ?? ''
+			),
+			id: cleanTranslation(
+				v.translations.find((t) => t.resource_id === idTranslation.id)?.text ?? ''
+			)
+		}))
+	});
+	console.log(`  surah ${chapter.number} (${verses.length} verses)`);
+});
+
+if (verseTotal !== TOTAL_VERSES)
+	throw new Error(`Expected ${TOTAL_VERSES} verses total, got ${verseTotal}`);
+console.log(`✓ all ${verseTotal} verses downloaded`);
+
+// --- 4. Tafsir EN (Ibn Kathir, quran.com) -----------------------------------
+// Consecutive verses often share one tafsir passage; group them to save space.
+
+interface ApiTafsir {
+	verse_key: string;
+	text: string;
+}
+
+function groupTafsir(entries: { verseNumber: number; text: string }[]) {
+	const groups: { from: number; to: number; text: string }[] = [];
+	for (const e of entries) {
+		if (!e.text.trim()) continue;
+		const last = groups[groups.length - 1];
+		if (last && last.text === e.text && e.verseNumber === last.to + 1) last.to = e.verseNumber;
+		else groups.push({ from: e.verseNumber, to: e.verseNumber, text: e.text });
+	}
+	return groups;
+}
+
+await pool(chapters, 6, async (chapter) => {
+	const data = await getJson<{ tafsirs: ApiTafsir[] }>(
+		`${QURAN_API}/tafsirs/${enTafsir.id}/by_chapter/${chapter.number}`
+	);
+	const grouped = groupTafsir(
+		data.tafsirs.map((t) => ({ verseNumber: Number(t.verse_key.split(':')[1]), text: t.text }))
+	);
+	await write(`tafsir/en/${chapter.number}.json`, {
+		surah: chapter.number,
+		source: enTafsir.name,
+		entries: grouped
+	});
+	console.log(`  tafsir en ${chapter.number} (${grouped.length} passages)`);
+});
+console.log('✓ english tafsir downloaded');
+
+// --- 5. Tafsir ID (Kemenag, equran.id) ---------------------------------------
+
+await pool(chapters, 4, async (chapter) => {
+	const data = await getJson<{ code: number; data: { tafsir: { ayat: number; teks: string }[] } }>(
+		`${EQURAN_API}/tafsir/${chapter.number}`
+	);
+	if (data.code !== 200) throw new Error(`equran.id surah ${chapter.number}: code ${data.code}`);
+	if (data.data.tafsir.length !== chapter.versesCount) {
+		throw new Error(
+			`Tafsir ID surah ${chapter.number}: expected ${chapter.versesCount}, got ${data.data.tafsir.length}`
+		);
+	}
+	const grouped = groupTafsir(data.data.tafsir.map((t) => ({ verseNumber: t.ayat, text: t.teks })));
+	await write(`tafsir/id/${chapter.number}.json`, {
+		surah: chapter.number,
+		source: 'Tafsir Kemenag',
+		entries: grouped
+	});
+	console.log(`  tafsir id ${chapter.number} (${grouped.length} passages)`);
+});
+console.log('✓ indonesian tafsir downloaded');
+console.log('Done.');

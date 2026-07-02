@@ -1,21 +1,36 @@
 <script lang="ts">
-	import type { Pathname } from '$app/types';
-	import { resolve } from '$app/paths';
-	import { page } from '$app/state';
-	import { locales, localizeHref } from '$lib/paraglide/runtime';
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
+	import { app } from '$lib/app-state.svelte';
+	import ActivityBar from '$lib/components/ActivityBar.svelte';
+	import Sidebar from '$lib/components/Sidebar.svelte';
+	import type { LayoutProps } from './$types';
 
-	let { children } = $props();
+	let { data, children }: LayoutProps = $props();
+
+	function onKeydown(event: KeyboardEvent) {
+		if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
+			event.preventDefault();
+			app.toggleSidebar();
+		}
+	}
 </script>
 
-<svelte:head><link rel="icon" href={favicon} /></svelte:head>
-{@render children()}
+<svelte:head>
+	<link rel="icon" href={favicon} />
+	<title>Tadabbur</title>
+</svelte:head>
 
-<div style="display:none">
-	{#each locales as locale (locale)}
-		<a
-			href={resolve(localizeHref(page.url.pathname, { locale }) as Pathname)}
-		>{locale}</a>
-	{/each}
+<svelte:window onkeydown={onKeydown} />
+
+<div class="flex h-dvh overflow-hidden">
+	<ActivityBar />
+
+	{#if app.prefs.sidebarOpen}
+		<div class="hidden md:contents">
+			<Sidebar chapters={data.chapters} />
+		</div>
+	{/if}
+
+	{@render children()}
 </div>

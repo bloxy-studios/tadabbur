@@ -1,3 +1,27 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
+@import '@fontsource/amiri-quran';
+
+@theme {
+	--font-arabic: 'Amiri Quran', 'Scheherazade New', 'Traditional Arabic', serif;
+	--color-paper: #faf9f7;
+	--color-paper-raised: #ffffff;
+	--color-accent: var(--color-emerald-700);
+	--color-accent-soft: var(--color-emerald-50);
+}
+
+html {
+	scroll-behavior: smooth;
+}
+
+body {
+	background-color: var(--color-paper);
+	color: var(--color-stone-800);
+	overscroll-behavior-y: none;
+}
+
+/* Verse anchors land below nothing (no fixed header) but give breathing room */
+.verse-anchor {
+	scroll-margin-top: 1.5rem;
+}
