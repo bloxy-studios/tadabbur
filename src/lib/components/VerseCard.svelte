@@ -91,7 +91,9 @@
 	aria-label={m.verse_aria({ key: verse.key })}
 	tabindex="0"
 	onkeydown={onArticleKeydown}
-	class="verse-anchor verse-card group border-edge-soft border-b py-6 last:border-b-0"
+	class="verse-anchor group border-edge-soft border-b py-6 last:border-b-0 {playMenuOpen
+		? ''
+		: 'verse-card'}"
 	{@attach (node) => lazyObserve(node, (visible) => (nearViewport = visible))}
 >
 	<p

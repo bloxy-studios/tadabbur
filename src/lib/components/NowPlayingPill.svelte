@@ -10,11 +10,16 @@
 
 	let { chapters }: { chapters: Chapter[] } = $props();
 
-	// Only surfaces when recitation is sounding (or paused) for a surah that
-	// is NOT the one on screen — a way back to what's playing.
+	// Surfaces in two cases: recitation sounding (or paused) for a surah that is
+	// NOT on screen — a way back to what's playing — OR whole-surah playback of
+	// the surah you're reading, so there's a pause control that doesn't scroll
+	// off with the header button. A quick single-ayah listen of the on-screen
+	// surah stays quiet (its own verse button is right there).
 	const now = $derived.by(() => {
 		const current = player.current;
-		if (!current || page.params.surah === String(current.surah)) return null;
+		if (!current) return null;
+		const onThisSurah = page.params.surah === String(current.surah);
+		if (onThisSurah && !player.continuous) return null;
 		return {
 			...current,
 			chapter: chapters[current.surah - 1],

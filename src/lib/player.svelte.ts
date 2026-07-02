@@ -13,6 +13,8 @@ class Player {
 	playing = $state(false);
 	/** True while a selected word range (not the whole verse) is playing. */
 	rangeActive = $state(false);
+	/** True while whole-surah (follow-along) playback is the active intent — not single-ayah, not a word range. */
+	continuous = $state(false);
 
 	#audio: HTMLAudioElement | null = null;
 	#timings: SurahTimings | null = null;
@@ -38,6 +40,7 @@ class Player {
 				this.current = null;
 				this.currentWord = null;
 				this.rangeActive = false;
+				this.continuous = false;
 				cancelAnimationFrame(this.#raf);
 			});
 			this.#audio.addEventListener('error', () => {
@@ -45,6 +48,7 @@ class Player {
 				this.current = null;
 				this.currentWord = null;
 				this.rangeActive = false;
+				this.continuous = false;
 			});
 		}
 		return this.#audio;
@@ -88,6 +92,9 @@ class Player {
 			const lastSeg = timing.segments[timing.segments.length - 1];
 			let startMs = firstSeg ? firstSeg[1] : timing.from;
 			this.#stopAt = opts?.continuous ? null : lastSeg ? lastSeg[2] : timing.to;
+			// Whole-surah intent — unconditionally set so a later single-ayah or
+			// word-range play() clears a stale true. A range is never whole-surah.
+			this.continuous = opts?.continuous === true && !opts?.words;
 			this.rangeActive = false;
 			if (opts?.words) {
 				const segments = timing.segments.filter(
@@ -147,6 +154,7 @@ class Player {
 		this.#audio.pause();
 		this.current = null;
 		this.rangeActive = false;
+		this.continuous = false;
 		this.#stopAt = null;
 	}
 
