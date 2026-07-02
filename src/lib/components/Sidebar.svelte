@@ -7,15 +7,13 @@
 	import SurahList from './SurahList.svelte';
 	import SearchView from './SearchView.svelte';
 	import NotesView from './NotesView.svelte';
-	import SettingsView from './SettingsView.svelte';
 
 	let { chapters }: { chapters: Chapter[] } = $props();
 
 	const titles = {
 		surahs: m.nav_surahs,
 		search: m.nav_search,
-		notes: m.nav_notes,
-		settings: m.nav_settings
+		notes: m.nav_notes
 	} as const;
 </script>
 
@@ -30,10 +28,8 @@
 				<SurahList {chapters} />
 			{:else if app.view === 'search'}
 				<SearchView {chapters} />
-			{:else if app.view === 'notes'}
-				<NotesView />
 			{:else}
-				<SettingsView />
+				<NotesView />
 			{/if}
 		</div>
 	{/key}

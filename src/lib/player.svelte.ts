@@ -1,6 +1,6 @@
 import { browser } from '$app/environment';
 import { app } from './app-state.svelte';
-import { getTimings, type SurahTimings } from './quran/timings';
+import { getTimings, type SurahTimings, type VerseTiming } from './quran/timings';
 
 /**
  * One shared gapless-audio player. Playback continues through the surah
@@ -132,6 +132,33 @@ class Player {
 		void this.play(surah, verse);
 	}
 
+	/** Mini-player control: pause / resume in place, keeping the position. */
+	togglePause() {
+		if (!browser || !this.current) return;
+		const audio = this.#ensure();
+		if (this.playing) audio.pause();
+		else void audio.play().catch(() => {});
+	}
+
+	/** Stop playback entirely and clear the now-playing state. */
+	stop() {
+		if (!this.#audio) return;
+		this.#playToken++;
+		this.#audio.pause();
+		this.current = null;
+		this.rangeActive = false;
+		this.#stopAt = null;
+	}
+
+	/** Precise start/end of a verse: its word segments (windows bleed). */
+	#spanFrom(timing: VerseTiming): number {
+		return timing.segments[0]?.[1] ?? timing.from;
+	}
+
+	#spanTo(timing: VerseTiming): number {
+		return timing.segments[timing.segments.length - 1]?.[2] ?? timing.to;
+	}
+
 	#tick = () => {
 		const audio = this.#audio;
 		if (!audio || !this.#timings || !this.current) return;
@@ -150,9 +177,13 @@ class Player {
 			return;
 		}
 
+		// Track the verse by its precise word-segment span, NOT the QDC verse
+		// window — windows overlap neighbors (notably Alafasy), so a window
+		// lookup blames the previous verse for the first ~100ms of an ayah.
+		// In the silence between spans, stay on the current verse.
 		let timing = this.#timings.verses[this.current.verse - 1];
-		if (!timing || t < timing.from || t >= timing.to) {
-			const found = this.#timings.verses.find((v) => t >= v.from && t < v.to);
+		if (!timing || t < this.#spanFrom(timing) || t >= this.#spanTo(timing)) {
+			const found = this.#timings.verses.find((v) => t >= this.#spanFrom(v) && t < this.#spanTo(v));
 			if (found) {
 				const verse = Number(found.key.split(':')[1]);
 				if (verse !== this.current.verse) this.current = { surah: this.current.surah, verse };

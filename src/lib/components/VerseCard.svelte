@@ -10,14 +10,7 @@
 	import Icon from './Icon.svelte';
 	import TafsirPanel from './TafsirPanel.svelte';
 
-	let { surah, verse, eager = false }: { surah: number; verse: Verse; eager?: boolean } = $props();
-
-	// Suspense-style lazy content: only cards near the viewport render their
-	// content; far cards are empty shells that keep their measured height.
-	// `eager` is deliberately only the initial value; the observer owns it after.
-	// svelte-ignore state_referenced_locally
-	let mounted = $state(eager);
-	let shellHeight = $state(0);
+	let { surah, verse }: { surah: number; verse: Verse } = $props();
 
 	let tafsirOpen = $state(false);
 	let copied = $state(false);
@@ -32,16 +25,12 @@
 	const isPlaying = $derived(highlightActive && !player.rangeActive);
 	const activeWord = $derived(highlightActive ? player.currentWord : null);
 
-	function lazy(node: HTMLElement) {
-		return lazyObserve(node, (visible) => {
-			if (visible) {
-				mounted = true;
-			} else if (mounted && !tafsirOpen && !playMenuOpen && !isCurrent) {
-				shellHeight = node.offsetHeight;
-				mounted = false;
-			}
-		});
-	}
+	// Mounting every card in full made surah navigation block for hundreds of
+	// ms on long surahs — far cards render plain text (same height) and defer
+	// word spans + the actions row until they approach the viewport.
+	let nearViewport = $state(false);
+	const hydrated = $derived(nearViewport || highlightActive || tafsirOpen || playMenuOpen);
+	const plainText = $derived(verse.words.map((w) => w.a).join(' ') + ' ');
 
 	async function copyLink() {
 		const url = `${location.origin}/surah/${surah}#v${verse.n}`;
@@ -100,37 +89,35 @@
 	data-verse={verse.n}
 	role="group"
 	aria-label={m.verse_aria({ key: verse.key })}
-	tabindex={mounted ? 0 : -1}
+	tabindex="0"
 	onkeydown={onArticleKeydown}
-	class="verse-anchor group border-edge-soft border-b py-6 last:border-b-0 {playMenuOpen
-		? ''
-		: '[content-visibility:auto] [contain-intrinsic-size:auto_190px]'}"
-	style={mounted ? '' : `height: ${shellHeight || 190}px`}
-	{@attach lazy}
+	class="verse-anchor verse-card group border-edge-soft border-b py-6 last:border-b-0"
+	{@attach (node) => lazyObserve(node, (visible) => (nearViewport = visible))}
 >
-	{#if mounted}
-		<p
-			dir="rtl"
-			lang="ar"
-			class="font-arabic text-ink leading-loose"
-			style="font-size: {app.prefs.arabicSize}rem"
-		>
-			{#each verse.words as word, i (i)}<span
+	<p
+		dir="rtl"
+		lang="ar"
+		class="font-arabic text-ink leading-loose"
+		style="font-size: var(--arabic-size)"
+	>
+		{#if hydrated}{#each verse.words as word, i (i)}<span
 					data-word={i + 1}
 					class="transition-colors duration-100 {activeWord === i + 1 ? 'word-active' : ''}"
-					>{word.a}</span
-				>
-			{/each}<span
-				class="text-accent mx-1 inline-block"
-				style="font-size: {app.prefs.arabicSize * 0.6}rem">﴿{verse.n}﴾</span
-			>
-		</p>
+					>{word.a + ' '}</span
+				>{/each}{:else}{plainText}{/if}<span
+			class="text-accent mx-1 inline-block"
+			style="font-size: calc(var(--arabic-size) * 0.6)">﴿{verse.n}﴾</span
+		>
+	</p>
 
-		{#if !app.prefs.focusMode}
-			<p class="text-body mt-3 text-[15px] leading-relaxed">{verseTranslation(verse)}</p>
+	{#if !app.prefs.focusMode}
+		<p class="text-body mt-3 text-[15px] leading-relaxed">{verseTranslation(verse)}</p>
 
+		{#if !hydrated}
+			<div class="mt-3 h-[26px] no-hover:h-[34px]"></div>
+		{:else}
 			<div
-				class="mt-3 flex flex-wrap items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 {tafsirOpen ||
+				class="mt-3 flex flex-wrap items-center gap-1 transition-opacity group-hover:opacity-100 focus-within:opacity-100 can-hover:opacity-0 {tafsirOpen ||
 				isPlaying ||
 				playMenuOpen
 					? 'opacity-100'
@@ -146,8 +133,10 @@
 					>
 						<button
 							type="button"
-							class="flex items-center gap-1 rounded-l-[5px] px-2 py-1 text-xs font-medium transition-colors
-								{isPlaying ? 'bg-accent-soft text-accent' : 'text-faint hover:bg-edge-soft hover:text-body'}"
+							class="flex items-center gap-1 rounded-l-[5px] px-2 py-1 text-xs font-medium transition-colors no-hover:px-2.5 no-hover:py-2
+								{isPlaying
+								? 'bg-accent-soft text-accent'
+								: 'text-faint no-hover:text-body hover:bg-edge-soft hover:text-body'}"
 							onclick={() => player.toggle(surah, verse.n)}
 						>
 							<Icon name={isPlaying ? 'pause' : 'play'} size={14} />
@@ -156,9 +145,11 @@
 						<button
 							bind:this={menuButton}
 							type="button"
-							class="flex items-center self-stretch rounded-r-[5px] border-l pr-1 pl-0.5 transition-colors
+							class="flex items-center self-stretch rounded-r-[5px] border-l pr-1 pl-0.5 transition-colors no-hover:pr-2 no-hover:pl-1.5
 								{isPlaying || playMenuOpen ? 'border-accent/50' : 'border-edge'}
-								{playMenuOpen ? 'bg-accent-soft text-accent' : 'text-faint hover:bg-edge-soft hover:text-body'}"
+								{playMenuOpen
+								? 'bg-accent-soft text-accent'
+								: 'text-faint no-hover:text-body hover:bg-edge-soft hover:text-body'}"
 							title={m.playback_options()}
 							aria-label={m.playback_options()}
 							aria-haspopup="menu"
@@ -189,7 +180,7 @@
 							<button
 								type="button"
 								role="menuitem"
-								class="text-body hover:bg-edge-soft flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-medium"
+								class="text-body hover:bg-edge-soft flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-medium no-hover:py-2.5"
 								onclick={() => {
 									playMenuOpen = false;
 									void player.play(surah, verse.n);
@@ -201,7 +192,7 @@
 							<button
 								type="button"
 								role="menuitem"
-								class="text-body hover:bg-edge-soft flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-medium"
+								class="text-body hover:bg-edge-soft flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-medium no-hover:py-2.5"
 								onclick={() => {
 									playMenuOpen = false;
 									void player.play(surah, verse.n, { continuous: true });
@@ -215,8 +206,10 @@
 				</div>
 				<button
 					type="button"
-					class="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors
-						{tafsirOpen ? 'bg-accent-soft text-accent' : 'text-faint hover:bg-edge-soft hover:text-body'}"
+					class="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors no-hover:px-2.5 no-hover:py-2
+						{tafsirOpen
+						? 'bg-accent-soft text-accent'
+						: 'text-faint no-hover:text-body hover:bg-edge-soft hover:text-body'}"
 					onclick={() => (tafsirOpen = !tafsirOpen)}
 				>
 					<Icon name="book" size={14} />
@@ -224,7 +217,7 @@
 				</button>
 				<button
 					type="button"
-					class="text-faint hover:bg-edge-soft hover:text-body flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors"
+					class="text-faint no-hover:text-body hover:bg-edge-soft hover:text-body flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors no-hover:px-2.5 no-hover:py-2"
 					onclick={copyLink}
 				>
 					<Icon name="link" size={14} />
@@ -232,7 +225,7 @@
 				</button>
 				<button
 					type="button"
-					class="text-faint hover:bg-edge-soft hover:text-body flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors"
+					class="text-faint no-hover:text-body hover:bg-edge-soft hover:text-body flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors no-hover:px-2.5 no-hover:py-2"
 					onclick={record}
 				>
 					<Icon name="mic" size={14} />

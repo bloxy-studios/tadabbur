@@ -7,6 +7,9 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@custom-variant can-hover (@media (hover: hover));
+@custom-variant no-hover (@media (hover: none));
+
 /* Official KFGQPC Uthmanic Script HAFS v22 (King Fahd Complex), self-hosted. */
 @font-face {
 	font-family: 'KFGQPC Uthmanic Hafs';
@@ -14,12 +17,21 @@
 	font-display: swap;
 }
 
-/*
- * Semantic color tokens. Components only use these (via the @theme mapping
- * below), so the dark theme is a pure variable swap.
- */
 :root {
 	--arabic-font: 'KFGQPC Uthmanic Hafs';
+	--arabic-size: 2rem;
+}
+
+/*
+ * Semantic color tokens. Components only use these (via the @theme mapping
+ * below), so a theme is one block that swaps every variable. Themes are a
+ * flat list keyed by `data-theme` on <html>; dark ones also get the `.dark`
+ * class from JS so the `dark:` variant (prose-invert) keeps working. The
+ * settings swatches carry their own `data-theme`, so each always previews
+ * its theme's real colors.
+ */
+:root,
+[data-theme='light'] {
 	--paper: #faf9f7;
 	--surface: #ffffff;
 	--edge: #e7e5e4;
@@ -36,7 +48,7 @@
 	color-scheme: light;
 }
 
-.dark {
+[data-theme='dark'] {
 	--paper: #171412;
 	--surface: #211d1a;
 	--edge: #35302b;
@@ -49,6 +61,74 @@
 	--accent-soft: rgb(52 211 153 / 0.16);
 	--on-accent: #0c0a09;
 	--chart: #059669;
+	color-scheme: dark;
+}
+
+/* Mushaf — Madinah-mushaf cream paper, sepia ink, gold ornament accent. */
+[data-theme='mushaf'] {
+	--paper: #f6efe0;
+	--surface: #fdf8ec;
+	--edge: #e3d8c1;
+	--edge-soft: #ede3cf;
+	--ink: #2c2416;
+	--body: #4a3f2e;
+	--muted: #7d6f57;
+	--faint: #a3937a;
+	--accent: #806013;
+	--accent-soft: color-mix(in srgb, #806013 12%, #fdf8ec);
+	--on-accent: #ffffff;
+	--chart: #806013;
+	color-scheme: light;
+}
+
+/* Rawdah — sage green, after the garden between the minbar and the chamber. */
+[data-theme='rawdah'] {
+	--paper: #f3f6f1;
+	--surface: #ffffff;
+	--edge: #dde5da;
+	--edge-soft: #e9efe6;
+	--ink: #1a231c;
+	--body: #3d4a3f;
+	--muted: #6b7a6c;
+	--faint: #97a698;
+	--accent: #166534;
+	--accent-soft: color-mix(in srgb, #166534 12%, #ffffff);
+	--on-accent: #ffffff;
+	--chart: #166534;
+	color-scheme: light;
+}
+
+/* Sea — deep blue-slate night paper with an indigo accent. */
+[data-theme='sea'] {
+	--paper: #12151c;
+	--surface: #1a1f28;
+	--edge: #2b3240;
+	--edge-soft: #222834;
+	--ink: #f1f3f7;
+	--body: #ccd3de;
+	--muted: #949dae;
+	--faint: #6a7383;
+	--accent: #818cf8;
+	--accent-soft: rgb(129 140 248 / 0.16);
+	--on-accent: #10131a;
+	--chart: #6366f1;
+	color-scheme: dark;
+}
+
+/* Night — true-black AMOLED for reading in the dark. */
+[data-theme='night'] {
+	--paper: #000000;
+	--surface: #0c0c0c;
+	--edge: #262626;
+	--edge-soft: #171717;
+	--ink: #e7e5e4;
+	--body: #c8c5c3;
+	--muted: #8f8b88;
+	--faint: #625e5b;
+	--accent: #34d399;
+	--accent-soft: rgb(52 211 153 / 0.14);
+	--on-accent: #000000;
+	--chart: #10b981;
 	color-scheme: dark;
 }
 
@@ -70,6 +150,7 @@
 
 html {
 	scroll-behavior: smooth;
+	background-color: var(--paper);
 }
 
 /* Consistent but quiet keyboard focus ring — visible, never shouty. */
@@ -96,6 +177,22 @@ body {
 
 .verse-anchor {
 	scroll-margin-top: 1.5rem;
+}
+
+/*
+ * Off-screen cards skip layout and Arabic text shaping entirely; the
+ * intrinsic-size estimate only matters before a card's first render —
+ * after that the browser remembers its true height.
+ */
+.verse-card {
+	content-visibility: auto;
+	contain-intrinsic-size: auto 16rem;
+}
+
+/* One block per mushaf page in focus mode — same trick, page-sized. */
+.verse-page {
+	content-visibility: auto;
+	contain-intrinsic-size: auto 40rem;
 }
 
 /*

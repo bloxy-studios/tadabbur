@@ -4,20 +4,45 @@
 	<head>
 		<meta charset="utf-8" />
 
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<meta name="theme-color" content="#faf9f7" />
+		<link
+			rel="preload"
+			href="/fonts/UthmanicHafsV22.woff2"
+			as="font"
+			type="font/woff2"
+			crossorigin="anonymous"
+		/>
 
 		<meta name="text-scale" content="scale" />
 		<script>
-			// Apply theme + Arabic font before first paint to avoid a flash.
+			// Apply theme + Arabic font/size before first paint to avoid a flash.
+			// Painting the background inline matters: CSS variables only exist once
+			// the stylesheet lands, and dark themes would flash white without it.
 			try {
 				var prefs = JSON.parse(localStorage.getItem('tadabbur:prefs') || '{}');
-				var theme = prefs.theme || 'system';
-				if (
-					theme === 'dark' ||
-					(theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)
-				) {
-					document.documentElement.classList.add('dark');
+				// Themes are a flat list; 'system' and 'palette' are legacy prefs.
+				var theme = prefs.palette && prefs.palette !== 'default' ? prefs.palette : prefs.theme;
+				if (!theme || theme === 'system') {
+					theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 				}
+				var root = document.documentElement;
+				root.setAttribute('data-theme', theme);
+				var papers = {
+					light: '#faf9f7',
+					dark: '#171412',
+					mushaf: '#f6efe0',
+					rawdah: '#f3f6f1',
+					sea: '#12151c',
+					night: '#000000'
+				};
+				var dark = theme === 'dark' || theme === 'sea' || theme === 'night';
+				if (dark) root.classList.add('dark');
+				root.style.backgroundColor = papers[theme] || papers.light;
+				root.style.colorScheme = dark ? 'dark' : 'light';
+				document
+					.querySelector('meta[name="theme-color"]')
+					.setAttribute('content', papers[theme] || papers.light);
 				var fonts = {
 					uthmani: "'KFGQPC Uthmanic Hafs'",
 					amiri: "'Amiri Quran'",
@@ -25,7 +50,10 @@
 					noto: "'Noto Naskh Arabic'"
 				};
 				if (fonts[prefs.arabicFont]) {
-					document.documentElement.style.setProperty('--arabic-font', fonts[prefs.arabicFont]);
+					root.style.setProperty('--arabic-font', fonts[prefs.arabicFont]);
+				}
+				if (typeof prefs.arabicSize === 'number') {
+					root.style.setProperty('--arabic-size', prefs.arabicSize + 'rem');
 				}
 			} catch (e) {
 				/* first visit, defaults apply */

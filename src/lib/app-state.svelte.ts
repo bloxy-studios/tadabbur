@@ -2,8 +2,12 @@ import { browser } from '$app/environment';
 import type { ReciterId } from './quran/audio';
 import { dateKey } from './progress';
 
-export type SidebarView = 'surahs' | 'search' | 'notes' | 'settings';
-export type Theme = 'light' | 'dark' | 'system';
+export type SidebarView = 'surahs' | 'search' | 'notes';
+export type Theme = 'light' | 'dark' | 'mushaf' | 'rawdah' | 'sea' | 'night';
+export const themes: Theme[] = ['light', 'dark', 'mushaf', 'rawdah', 'sea', 'night'];
+/** Themes that also get the `.dark` class (for the `dark:` Tailwind variant). */
+// eslint-disable-next-line svelte/prefer-svelte-reactivity -- readonly constant, never mutated
+export const darkThemes: ReadonlySet<Theme> = new Set(['dark', 'sea', 'night']);
 export type ArabicFont = 'uthmani' | 'amiri' | 'scheherazade' | 'noto';
 
 export const arabicFontStacks: Record<ArabicFont, string> = {
@@ -35,7 +39,7 @@ interface Prefs {
 }
 
 const defaults: Prefs = {
-	theme: 'system',
+	theme: 'light',
 	arabicFont: 'uthmani',
 	arabicSize: 2,
 	focusMode: false,
@@ -58,6 +62,13 @@ function loadPrefs(): Prefs {
 	const prefs = loadJson(STORAGE_KEY, defaults);
 	// Reciter ids moved from everyayah slugs (strings) to QDC ids (numbers).
 	if (typeof prefs.reciter !== 'number') prefs.reciter = defaults.reciter;
+	// Themes flattened from mode ('system') × palette to a single list.
+	const legacy = prefs as Prefs & { palette?: string };
+	if (legacy.palette && legacy.palette !== 'default') prefs.theme = legacy.palette as Theme;
+	delete legacy.palette;
+	if (!themes.includes(prefs.theme)) {
+		prefs.theme = browser && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+	}
 	return prefs;
 }
 

@@ -24,7 +24,7 @@
 >
 	<a
 		href={resolve('/')}
-		class="text-accent mb-2 flex h-9 w-9 items-center justify-center rounded-lg"
+		class="text-accent mb-2 flex h-9 w-9 items-center justify-center rounded-lg no-hover:h-11 no-hover:w-11"
 		title={m.nav_home()}
 	>
 		<span class="font-arabic text-2xl leading-none">ت</span>
@@ -33,7 +33,7 @@
 	{#each items as item (item.view)}
 		<button
 			type="button"
-			class="flex h-9 w-9 items-center justify-center rounded-lg transition-colors {itemClass(
+			class="flex h-9 w-9 items-center justify-center rounded-lg no-hover:h-11 no-hover:w-11 transition-colors {itemClass(
 				item.view
 			)}"
 			title={item.label()}
@@ -46,8 +46,8 @@
 
 	<a
 		href={resolve('/progress')}
-		class="flex h-9 w-9 items-center justify-center rounded-lg transition-colors {page.url
-			.pathname === '/progress'
+		class="flex h-9 w-9 items-center justify-center rounded-lg no-hover:h-11 no-hover:w-11 transition-colors {page
+			.url.pathname === '/progress'
 			? 'bg-accent-soft text-accent'
 			: 'text-faint hover:bg-edge-soft hover:text-body'}"
 		title={m.nav_progress()}
@@ -58,15 +58,15 @@
 
 	<div class="grow"></div>
 
-	<button
-		type="button"
-		class="flex h-9 w-9 items-center justify-center rounded-lg transition-colors {itemClass(
-			'settings'
-		)}"
+	<a
+		href={resolve('/settings')}
+		class="flex h-9 w-9 items-center justify-center rounded-lg no-hover:h-11 no-hover:w-11 transition-colors {page
+			.url.pathname === '/settings'
+			? 'bg-accent-soft text-accent'
+			: 'text-faint hover:bg-edge-soft hover:text-body'}"
 		title={m.nav_settings()}
 		aria-label={m.nav_settings()}
-		onclick={() => app.toggleSidebar('settings')}
 	>
 		<Icon name="settings" />
-	</button>
+	</a>
 </nav>

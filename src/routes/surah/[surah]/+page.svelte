@@ -11,8 +11,10 @@
 	import { m } from '$lib/paraglide/messages';
 	import Icon from '$lib/components/Icon.svelte';
 	import InfoPane from '$lib/components/InfoPane.svelte';
+	import Minimap from '$lib/components/Minimap.svelte';
 	import SelectionPopover from '$lib/components/SelectionPopover.svelte';
 	import VerseCard from '$lib/components/VerseCard.svelte';
+	import VerseFlow from '$lib/components/VerseFlow.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -46,16 +48,30 @@
 		};
 	});
 
-	// Verse cards mount lazily near the viewport (see lazy-cards.ts); only
-	// the first few render eagerly for SSR and instant first paint.
-	const EAGER_COUNT = 12;
+	// Focus mode groups verses into one block per mushaf page so the browser
+	// can skip shaping/layout of off-screen pages (content-visibility) — one
+	// surah-length paragraph forced a full synchronous shape of every word on
+	// navigation and reflowed entirely whenever a verse hydrated mid-scroll.
+	const versePages = $derived.by(() => {
+		const pages: { page: number; verses: Verse[] }[] = [];
+		for (const verse of surahData?.verses ?? []) {
+			const last = pages[pages.length - 1];
+			if (last?.page === verse.page) last.verses.push(verse);
+			else pages.push({ page: verse.page, verses: [verse] });
+		}
+		return pages;
+	});
 
 	// Keyboard jumps ([ / ]) get no hover preload — warm the neighbors so
 	// they always land from memory, ahead of the slow full-sweep prefetch.
+	// Debounced so rapid [ ] traversal doesn't fetch+parse surahs skipped past.
 	$effect(() => {
 		const n = data.surah;
-		if (n < 114) void getSurah(fetch, n + 1);
-		if (n > 1) void getSurah(fetch, n - 1);
+		const timer = setTimeout(() => {
+			if (n < 114) void getSurah(fetch, n + 1);
+			if (n > 1) void getSurah(fetch, n - 1);
+		}, 250);
+		return () => clearTimeout(timer);
 	});
 
 	let main: HTMLElement;
@@ -80,6 +96,7 @@
 	// Track the topmost visible verse as progress.
 	$effect(() => {
 		if (!surahData) return;
+		void app.prefs.focusMode; // re-attach when the verse DOM swaps
 		const surah = surahData.surah;
 
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- observer bookkeeping only, never rendered
@@ -202,11 +219,12 @@
 	id="main-content"
 	data-pane
 	tabindex="-1"
-	class="min-w-0 grow overflow-y-auto focus:outline-none"
+	class="min-w-0 grow overflow-y-auto focus:outline-none md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden"
 	onpointerup={onPointerUp}
 	onscroll={() => (selection = null)}
 	onkeydown={onMainKeydown}
 >
+	<Minimap surah={data.surah} loaded={!!surahData} />
 	<div class="mx-auto max-w-3xl px-4 pb-24 sm:px-6 lg:px-10">
 		<header class="flex items-start justify-between gap-4 pt-8 pb-6 sm:pt-10">
 			<div class="min-w-0">
@@ -264,9 +282,28 @@
 		{#if surahData}
 			<!-- No transition here on purpose: [ / ] surah jumps must feel instant. -->
 			<div in:fade={{ duration: dur(120) }}>
-				{#each surahData.verses as verse (verse.key)}
-					<VerseCard surah={surahData.surah} {verse} eager={verse.n <= EAGER_COUNT} />
-				{/each}
+				{#if app.prefs.focusMode}
+					<div class="py-6">
+						{#each versePages as group (group.page)}
+							<p
+								dir="rtl"
+								lang="ar"
+								class="font-arabic text-ink verse-page leading-loose"
+								style="font-size: var(--arabic-size)"
+							>
+								{#each group.verses as verse (verse.key)}<VerseFlow
+										surah={surahData.surah}
+										{verse}
+									/>
+								{/each}
+							</p>
+						{/each}
+					</div>
+				{:else}
+					{#each surahData.verses as verse (verse.key)}
+						<VerseCard surah={surahData.surah} {verse} />
+					{/each}
+				{/if}
 			</div>
 		{:else}
 			{#each skeletonRows as i (i)}

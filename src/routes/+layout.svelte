@@ -6,8 +6,9 @@
 	import { getSurah } from '$lib/quran/data';
 	import { dur } from '$lib/motion';
 	import { m } from '$lib/paraglide/messages';
-	import { app, arabicFontStacks } from '$lib/app-state.svelte';
+	import { app, arabicFontStacks, darkThemes } from '$lib/app-state.svelte';
 	import ActivityBar from '$lib/components/ActivityBar.svelte';
+	import NowPlayingPill from '$lib/components/NowPlayingPill.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import type { LayoutProps } from './$types';
 
@@ -91,18 +92,20 @@
 
 	afterNavigate(() => app.closeMobileSidebar());
 
-	// Theme is a class on <html> so it can differ from the OS preference.
+	// Theme is data-theme on <html>; dark themes also get the .dark class so
+	// the `dark:` Tailwind variant (prose-invert) keeps working. The pre-paint
+	// script in app.html set an inline background/color-scheme before CSS was
+	// available — clear those so the stylesheet owns them from here on.
 	$effect(() => {
 		const theme = app.prefs.theme;
-		const media = window.matchMedia('(prefers-color-scheme: dark)');
-		const apply = () =>
-			document.documentElement.classList.toggle(
-				'dark',
-				theme === 'dark' || (theme === 'system' && media.matches)
-			);
-		apply();
-		media.addEventListener('change', apply);
-		return () => media.removeEventListener('change', apply);
+		const root = document.documentElement;
+		root.dataset.theme = theme;
+		root.classList.toggle('dark', darkThemes.has(theme));
+		root.style.backgroundColor = '';
+		root.style.colorScheme = '';
+		document
+			.querySelector('meta[name="theme-color"]')
+			?.setAttribute('content', getComputedStyle(root).getPropertyValue('--paper').trim());
 	});
 
 	$effect(() => {
@@ -112,12 +115,19 @@
 		);
 	});
 
+	$effect(() => {
+		document.documentElement.style.setProperty('--arabic-size', `${app.prefs.arabicSize}rem`);
+	});
+
 	// Local-first: once the app settles, quietly pull every surah into memory
 	// (~8.6MB JSON) during idle time so any surah switch is instant.
 	$effect(() => {
 		// navigator.connection is non-standard, hence the manual typing.
-		const connection = (navigator as { connection?: { saveData?: boolean } }).connection;
+		const connection = (
+			navigator as { connection?: { saveData?: boolean; effectiveType?: string } }
+		).connection;
 		if (connection?.saveData) return;
+		if (connection?.effectiveType && connection.effectiveType !== '4g') return;
 		let cancelled = false;
 		let n = 1;
 		const schedule = (fn: () => void) =>
@@ -145,7 +155,9 @@
 
 <svelte:window onkeydown={onKeydown} />
 
-<div class="flex h-dvh overflow-hidden">
+<div
+	class="flex h-dvh overflow-hidden pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]"
+>
 	<a
 		href="#main-content"
 		class="sr-only focus:not-sr-only focus:bg-surface focus:text-body focus:absolute focus:top-2 focus:left-14 focus:z-50 focus:rounded-lg focus:border focus:border-edge focus:px-3 focus:py-1.5 focus:text-sm focus:shadow-lg"
@@ -177,4 +189,6 @@
 	{/if}
 
 	{@render children()}
+
+	<NowPlayingPill chapters={data.chapters} />
 </div>
