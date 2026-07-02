@@ -65,10 +65,10 @@ html {
 	scroll-behavior: smooth;
 }
 
-/* One visible, consistent keyboard focus ring everywhere. */
+/* Consistent but quiet keyboard focus ring — visible, never shouty. */
 :focus-visible {
-	outline: 2px solid var(--accent);
-	outline-offset: 2px;
+	outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+	outline-offset: 1px;
 	border-radius: 4px;
 }
 

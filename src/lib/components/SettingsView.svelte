@@ -15,6 +15,16 @@
 		app.prefs[key] = value;
 		app.persistPrefs();
 	}
+
+	const shortcuts = [
+		{ keys: ['Ctrl/⌘', 'B'], label: m.sc_toggle_sidebar },
+		{ keys: ['Ctrl/⌘', 'F'], label: m.sc_search },
+		{ keys: ['J', 'K'], label: m.sc_verse_nav },
+		{ keys: ['P'], label: m.sc_play },
+		{ keys: ['T'], label: m.sc_tafsir },
+		{ keys: ['C'], label: m.sc_copy },
+		{ keys: ['Esc'], label: m.sc_close }
+	];
 </script>
 
 <div class="flex min-h-0 grow flex-col gap-6 overflow-y-auto px-4 pb-6">
@@ -112,6 +122,28 @@
 		>
 			بِسْمِ ٱللَّهِ
 		</p>
+	</section>
+
+	<section>
+		<h3 class="text-faint mb-2 text-xs font-semibold tracking-wide uppercase">
+			{m.settings_shortcuts()}
+		</h3>
+		<dl class="flex flex-col gap-1.5">
+			{#each shortcuts as shortcut (shortcut.label)}
+				<div class="flex items-center justify-between gap-3">
+					<dt class="text-body min-w-0 truncate text-xs">{shortcut.label()}</dt>
+					<dd class="flex shrink-0 gap-1">
+						{#each shortcut.keys as key (key)}
+							<kbd
+								class="bg-edge-soft text-muted rounded border border-edge px-1.5 py-0.5 font-sans text-[10px] font-medium"
+							>
+								{key}
+							</kbd>
+						{/each}
+					</dd>
+				</div>
+			{/each}
+		</dl>
 	</section>
 
 	<p class="text-faint text-xs leading-relaxed">{m.settings_note()}</p>
