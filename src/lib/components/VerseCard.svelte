@@ -14,8 +14,11 @@
 	let recordNote = $state(false);
 
 	const isCurrent = $derived(player.current?.surah === surah && player.current.verse === verse.n);
-	const isPlaying = $derived(player.playing && isCurrent);
-	const activeWord = $derived(isPlaying ? player.currentWord : null);
+	// The karaoke highlight follows any playback (whole verse or a selected
+	// range); the Play/Pause button only reflects whole-verse playback.
+	const highlightActive = $derived(player.playing && isCurrent);
+	const isPlaying = $derived(highlightActive && !player.rangeActive);
+	const activeWord = $derived(highlightActive ? player.currentWord : null);
 
 	async function copyLink() {
 		const url = `${location.origin}/surah/${surah}#v${verse.n}`;

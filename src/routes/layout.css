@@ -24,6 +24,8 @@
 	--accent: #047857;
 	--accent-soft: color-mix(in srgb, #047857 12%, #ffffff);
 	--on-accent: #ffffff;
+	/* Chart mark color, validated per theme (dataviz lightness band). */
+	--chart: #047857;
 	color-scheme: light;
 }
 
@@ -39,6 +41,7 @@
 	--accent: #34d399;
 	--accent-soft: rgb(52 211 153 / 0.16);
 	--on-accent: #0c0a09;
+	--chart: #059669;
 	color-scheme: dark;
 }
 
@@ -55,6 +58,7 @@
 	--color-accent: var(--accent);
 	--color-accent-soft: var(--accent-soft);
 	--color-on-accent: var(--on-accent);
+	--color-chart: var(--chart);
 }
 
 html {

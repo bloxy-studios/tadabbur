@@ -11,6 +11,8 @@ class Player {
 	current: { surah: number; verse: number } | null = $state(null);
 	currentWord: number | null = $state(null);
 	playing = $state(false);
+	/** True while a selected word range (not the whole verse) is playing. */
+	rangeActive = $state(false);
 
 	#audio: HTMLAudioElement | null = null;
 	#timings: SurahTimings | null = null;
@@ -34,12 +36,14 @@ class Player {
 				this.playing = false;
 				this.current = null;
 				this.currentWord = null;
+				this.rangeActive = false;
 				cancelAnimationFrame(this.#raf);
 			});
 			this.#audio.addEventListener('error', () => {
 				this.playing = false;
 				this.current = null;
 				this.currentWord = null;
+				this.rangeActive = false;
 			});
 		}
 		return this.#audio;
@@ -66,6 +70,7 @@ class Player {
 					this.#stopAt = segments[segments.length - 1][2];
 				}
 			}
+			this.rangeActive = this.#stopAt !== null;
 			this.current = { surah, verse };
 			audio.currentTime = startMs / 1000;
 			await audio.play();
@@ -75,17 +80,16 @@ class Player {
 		}
 	}
 
-	/** Verse play button: pause if this verse is playing, resume/start otherwise. */
+	/**
+	 * Verse play button: pause if this whole verse is playing; otherwise
+	 * ALWAYS restart the ayah from its beginning — no mid-verse resume, and a
+	 * running selection (word range) playback is simply taken over.
+	 */
 	toggle(surah: number, verse: number) {
 		if (!browser) return;
-		const audio = this.#ensure();
 		const isCurrent = this.current?.surah === surah && this.current.verse === verse;
 		if (this.playing && isCurrent && this.#stopAt === null) {
-			audio.pause();
-			return;
-		}
-		if (!this.playing && isCurrent && this.#stopAt === null && audio.src) {
-			void audio.play().catch(() => (this.current = null));
+			this.#ensure().pause();
 			return;
 		}
 		void this.play(surah, verse);
@@ -98,6 +102,7 @@ class Player {
 
 		if (this.#stopAt !== null && t >= this.#stopAt) {
 			this.#stopAt = null;
+			this.rangeActive = false;
 			audio.pause();
 			return;
 		}

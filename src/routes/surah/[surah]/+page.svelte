@@ -70,8 +70,10 @@
 			(entries) => {
 				for (const entry of entries) {
 					const n = Number((entry.target as HTMLElement).dataset.verse);
-					if (entry.isIntersecting) visible.add(n);
-					else visible.delete(n);
+					if (entry.isIntersecting) {
+						visible.add(n);
+						app.recordRead(surah, n);
+					} else visible.delete(n);
 				}
 				if (visible.size) app.setLastRead(surah, Math.min(...visible));
 			},

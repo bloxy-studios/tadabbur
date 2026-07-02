@@ -1,5 +1,6 @@
 import { browser } from '$app/environment';
 import type { ReciterId } from './quran/audio';
+import { dateKey } from './progress';
 
 export type SidebarView = 'surahs' | 'search' | 'notes' | 'settings';
 export type Theme = 'light' | 'dark' | 'system';
@@ -18,6 +19,9 @@ export interface LastRead {
 
 const STORAGE_KEY = 'tadabbur:prefs';
 const LAST_READ_KEY = 'tadabbur:last-read';
+const ACTIVITY_KEY = 'tadabbur:activity';
+const SURAH_PROGRESS_KEY = 'tadabbur:surah-progress';
+const ACTIVITY_RETENTION_DAYS = 60;
 
 interface Prefs {
 	theme: Theme;
@@ -60,6 +64,10 @@ class AppState {
 	view: SidebarView = $state('surahs');
 	prefs: Prefs = $state(loadPrefs());
 	lastRead: LastRead | null = $state(loadJson<LastRead | null>(LAST_READ_KEY, null));
+	/** Verse keys read per local day, e.g. { '2026-07-02': ['1:1', '1:2'] }. */
+	activity: Record<string, string[]> = $state(loadJson(ACTIVITY_KEY, {}));
+	/** Highest verse reached per surah. */
+	surahProgress: Record<number, number> = $state(loadJson(SURAH_PROGRESS_KEY, {}));
 	/** Mobile drawer visibility — session-only, never persisted. */
 	mobileSidebarOpen = $state(false);
 
@@ -70,6 +78,33 @@ class AppState {
 	setLastRead(surah: number, verse: number) {
 		this.lastRead = { surah, verse };
 		if (browser) localStorage.setItem(LAST_READ_KEY, JSON.stringify(this.lastRead));
+	}
+
+	recordRead(surah: number, verse: number) {
+		if (!browser) return;
+		const today = dateKey(new Date());
+		const verseKey = `${surah}:${verse}`;
+		let dirty = false;
+
+		const todays = this.activity[today] ?? [];
+		if (!todays.includes(verseKey)) {
+			this.activity[today] = [...todays, verseKey];
+			dirty = true;
+		}
+		if ((this.surahProgress[surah] ?? 0) < verse) {
+			this.surahProgress[surah] = verse;
+			dirty = true;
+		}
+		if (!dirty) return;
+
+		const cutoff = new Date();
+		cutoff.setDate(cutoff.getDate() - ACTIVITY_RETENTION_DAYS);
+		const cutoffKey = dateKey(cutoff);
+		for (const day of Object.keys(this.activity)) {
+			if (day < cutoffKey) delete this.activity[day];
+		}
+		localStorage.setItem(ACTIVITY_KEY, JSON.stringify(this.activity));
+		localStorage.setItem(SURAH_PROGRESS_KEY, JSON.stringify(this.surahProgress));
 	}
 
 	/**
