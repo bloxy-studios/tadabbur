@@ -33,11 +33,27 @@
 		list?.querySelector('[aria-current="page"]')?.scrollIntoView({ block: 'nearest' });
 	});
 
-	// Enter in the filter opens the first match.
+	// Enter in the filter opens the first match; ArrowDown enters the list.
 	function onFilterKeydown(event: KeyboardEvent) {
+		if (event.key === 'ArrowDown') {
+			event.preventDefault();
+			list?.querySelector('a')?.focus();
+			return;
+		}
 		if (event.key !== 'Enter' || !filtered.length) return;
 		event.preventDefault();
 		void goto(resolve('/surah/[surah]', { surah: String(filtered[0].number) }));
+	}
+
+	// Arrow keys move through the list items.
+	function onListKeydown(event: KeyboardEvent) {
+		if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+		const links = [...(list?.querySelectorAll<HTMLElement>('a') ?? [])];
+		const index = links.indexOf(document.activeElement as HTMLElement);
+		if (index === -1) return;
+		event.preventDefault();
+		const step = event.key === 'ArrowDown' ? 1 : -1;
+		links[Math.min(Math.max(index + step, 0), links.length - 1)]?.focus();
 	}
 </script>
 
@@ -52,7 +68,8 @@
 		/>
 	</div>
 
-	<ul bind:this={list} class="grow overflow-y-auto px-2 pb-4">
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+	<ul bind:this={list} class="grow overflow-y-auto px-2 pb-4" onkeydown={onListKeydown}>
 		{#each filtered as chapter (chapter.number)}
 			<li>
 				<a

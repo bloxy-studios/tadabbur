@@ -22,13 +22,25 @@
 
 	function focusPane(pane: HTMLElement | undefined) {
 		if (!pane) return;
-		if (pane.hasAttribute('tabindex')) {
-			pane.focus();
-			return;
+		// Reader: land on the topmost visible verse so focus is visible and
+		// j/k work immediately.
+		if (pane.matches('main')) {
+			const top = pane.getBoundingClientRect().top;
+			const verse = [...pane.querySelectorAll<HTMLElement>('[data-verse]')].find(
+				(article) => article.getBoundingClientRect().bottom > top + 16
+			);
+			if (verse) {
+				verse.focus();
+				return;
+			}
 		}
-		pane
-			.querySelector<HTMLElement>('a[href], button:not([tabindex="-1"]), input, [tabindex="0"]')
-			?.focus();
+		// Otherwise prefer the active item, then an input, then any control.
+		(
+			pane.querySelector<HTMLElement>('[aria-current="page"]') ??
+			pane.querySelector<HTMLElement>('input') ??
+			pane.querySelector<HTMLElement>('a[href], button:not([tabindex="-1"]), [tabindex="0"]') ??
+			(pane.hasAttribute('tabindex') ? pane : null)
+		)?.focus();
 	}
 
 	function onKeydown(event: KeyboardEvent) {

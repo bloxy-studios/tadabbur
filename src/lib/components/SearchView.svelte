@@ -65,6 +65,11 @@
 			bind:value={query}
 			onfocus={ensureCorpus}
 			onkeydown={(event) => {
+				if (event.key === 'ArrowDown') {
+					event.preventDefault();
+					list?.querySelector('a')?.focus();
+					return;
+				}
 				if (event.key !== 'Enter' || !hits.length) return;
 				event.preventDefault();
 				// Navigate via the first result's own link.
@@ -86,7 +91,24 @@
 		</p>
 	</div>
 
-	<ul bind:this={list} class="grow overflow-y-auto px-2 pb-4">
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+	<ul
+		bind:this={list}
+		class="grow overflow-y-auto px-2 pb-4"
+		onkeydown={(event) => {
+			if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+			const links = [...(list?.querySelectorAll('a') ?? [])];
+			const index = links.indexOf(document.activeElement as HTMLAnchorElement);
+			if (index === -1) return;
+			event.preventDefault();
+			if (event.key === 'ArrowUp' && index === 0) {
+				input?.focus();
+				return;
+			}
+			const step = event.key === 'ArrowDown' ? 1 : -1;
+			links[Math.min(Math.max(index + step, 0), links.length - 1)]?.focus();
+		}}
+	>
 		{#each hits as hit (hit.verse.key)}
 			<li>
 				<a

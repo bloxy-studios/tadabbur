@@ -157,8 +157,8 @@
 		const current = (event.target as HTMLElement).closest<HTMLElement>('[data-verse]');
 		const index = current ? articles.indexOf(current) : -1;
 		const next = articles[down ? Math.min(index + 1, articles.length - 1) : Math.max(index - 1, 0)];
-		next?.focus();
-		next?.scrollIntoView({ block: 'center' });
+		next?.focus({ preventScroll: true });
+		next?.scrollIntoView({ block: 'center', behavior: dur(1) ? 'smooth' : 'auto' });
 		event.preventDefault();
 	}
 
