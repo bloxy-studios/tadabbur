@@ -71,9 +71,20 @@ body {
 	scroll-margin-top: 1.5rem;
 }
 
+/*
+ * Follow-along highlight: soft accent pill drawn purely with paint
+ * (box-shadow spread, no padding) so wrapped RTL text never reflows.
+ */
+.word-active {
+	color: var(--accent);
+	background-color: color-mix(in srgb, var(--accent) 14%, transparent);
+	box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 14%, transparent);
+	border-radius: 8px;
+}
+
 /* Blocking Arabic text is a feature (word popover) — tint it to match. */
 [lang='ar']::selection,
 [lang='ar'] *::selection {
-	background-color: var(--accent);
-	color: var(--on-accent);
+	background-color: color-mix(in srgb, var(--accent) 22%, transparent);
+	color: var(--accent);
 }
