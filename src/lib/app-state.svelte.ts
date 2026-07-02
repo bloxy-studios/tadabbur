@@ -97,6 +97,7 @@ class AppState {
 		}
 		if (!dirty) return;
 
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- throwaway date math, never rendered
 		const cutoff = new Date();
 		cutoff.setDate(cutoff.getDate() - ACTIVITY_RETENTION_DAYS);
 		const cutoffKey = dateKey(cutoff);
