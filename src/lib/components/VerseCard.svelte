@@ -44,9 +44,8 @@
 	>
 		{#each verse.words as word, i (i)}<span
 				data-word={i + 1}
-				class="transition-colors duration-100 {activeWord === i + 1
-					? 'word-active'
-					: ''}">{word.a}</span
+				class="transition-colors duration-100 {activeWord === i + 1 ? 'word-active' : ''}"
+				>{word.a}</span
 			>
 		{/each}<span
 			class="text-accent mx-1 inline-block"

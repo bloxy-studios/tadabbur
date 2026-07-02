@@ -22,7 +22,7 @@
 	--muted: #78716c;
 	--faint: #a8a29e;
 	--accent: #047857;
-	--accent-soft: #ecfdf5;
+	--accent-soft: color-mix(in srgb, #047857 12%, #ffffff);
 	--on-accent: #ffffff;
 	color-scheme: light;
 }
@@ -37,7 +37,7 @@
 	--muted: #a8a29e;
 	--faint: #78716c;
 	--accent: #34d399;
-	--accent-soft: rgb(52 211 153 / 0.12);
+	--accent-soft: rgb(52 211 153 / 0.16);
 	--on-accent: #0c0a09;
 	color-scheme: dark;
 }

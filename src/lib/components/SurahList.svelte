@@ -53,11 +53,19 @@
 					</span>
 					<span class="min-w-0 grow">
 						<span class="text-ink block truncate text-sm font-medium">{chapter.nameSimple}</span>
-						<span class="text-faint block truncate text-xs">
+						<span
+							class="block truncate text-xs {active === chapter.number
+								? 'text-accent'
+								: 'text-faint'}"
+						>
 							{chapterName(chapter)} · {m.verses_count({ count: chapter.versesCount })}
 						</span>
 					</span>
-					<span class="font-arabic text-muted shrink-0 text-lg">{chapter.nameArabic}</span>
+					<span
+						class="font-arabic shrink-0 text-lg {active === chapter.number
+							? 'text-accent'
+							: 'text-muted'}">{chapter.nameArabic}</span
+					>
 				</a>
 			</li>
 		{:else}
