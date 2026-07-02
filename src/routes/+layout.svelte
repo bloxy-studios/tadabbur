@@ -120,6 +120,19 @@
 		document.documentElement.style.setProperty('--arabic-size', `${app.prefs.arabicSize}rem`);
 	});
 
+	// Browsers only re-check the service worker script on navigation and every
+	// ~24h — an installed PWA that stays open would ride an old deploy for
+	// days. Nudge the check whenever the app regains visibility.
+	$effect(() => {
+		if (!('serviceWorker' in navigator)) return;
+		const check = () => {
+			if (document.visibilityState === 'visible')
+				void navigator.serviceWorker.getRegistration().then((reg) => reg?.update());
+		};
+		document.addEventListener('visibilitychange', check);
+		return () => document.removeEventListener('visibilitychange', check);
+	});
+
 	// Local-first: once the app settles, quietly pull every surah into memory
 	// (~8.6MB JSON) during idle time so any surah switch is instant.
 	$effect(() => {

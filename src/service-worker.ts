@@ -24,7 +24,15 @@ const dev = build.length === 0;
 
 sw.addEventListener('install', (event) => {
 	if (dev) return void sw.skipWaiting();
-	event.waitUntil(caches.open(APP_CACHE).then((cache) => cache.addAll(shell)));
+	// Activate as soon as the new shell is cached — without skipWaiting the
+	// old worker keeps serving the previous deploy until every tab and PWA
+	// window is closed, which users experience as "must clear cache to update".
+	event.waitUntil(
+		caches
+			.open(APP_CACHE)
+			.then((cache) => cache.addAll(shell))
+			.then(() => sw.skipWaiting())
+	);
 });
 
 sw.addEventListener('activate', (event) => {
