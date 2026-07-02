@@ -55,8 +55,12 @@
 		const total = surahData.verses.length;
 		// Deep links to a late verse render everything up front instead.
 		const hashVerse = Number(location.hash.match(/^#v(\d+)$/)?.[1] ?? 0);
-		renderCount = hashVerse > INITIAL_CHUNK ? total : Math.min(INITIAL_CHUNK, total);
-		if (renderCount >= total) return;
+		// Track the count locally — reading renderCount here would make it a
+		// dependency of this effect, so every grown chunk would re-run it and
+		// reset the list back to the first chunk.
+		let count = hashVerse > INITIAL_CHUNK ? total : Math.min(INITIAL_CHUNK, total);
+		renderCount = count;
+		if (count >= total) return;
 		let cancelled = false;
 		const schedule = (fn: () => void) =>
 			'requestIdleCallback' in window
@@ -64,8 +68,9 @@
 				: setTimeout(fn, 40);
 		const grow = () => {
 			if (cancelled) return;
-			renderCount = Math.min(renderCount + GROW_CHUNK, total);
-			if (renderCount < total) schedule(grow);
+			count = Math.min(count + GROW_CHUNK, total);
+			renderCount = count;
+			if (count < total) schedule(grow);
 		};
 		schedule(grow);
 		return () => {
