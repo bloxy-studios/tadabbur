@@ -25,6 +25,14 @@
 
 	const active = $derived(Number(page.params.surah));
 
+	let list: HTMLUListElement | undefined = $state();
+
+	// Keep the active surah visible while navigating (e.g. holding ]).
+	$effect(() => {
+		void active;
+		list?.querySelector('[aria-current="page"]')?.scrollIntoView({ block: 'nearest' });
+	});
+
 	// Enter in the filter opens the first match.
 	function onFilterKeydown(event: KeyboardEvent) {
 		if (event.key !== 'Enter' || !filtered.length) return;
@@ -44,7 +52,7 @@
 		/>
 	</div>
 
-	<ul class="grow overflow-y-auto px-2 pb-4">
+	<ul bind:this={list} class="grow overflow-y-auto px-2 pb-4">
 		{#each filtered as chapter (chapter.number)}
 			<li>
 				<a
