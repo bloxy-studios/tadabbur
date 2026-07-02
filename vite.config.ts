@@ -18,6 +18,11 @@ export default defineConfig({
 			preprocess: [mdsvex({ extensions: ['.svx', '.md'] })],
 			extensions: ['.svelte', '.svx', '.md']
 		}),
-		paraglideVitePlugin({ project: './project.inlang', outdir: './src/lib/paraglide' })
+		paraglideVitePlugin({
+			project: './project.inlang',
+			outdir: './src/lib/paraglide',
+			// Cookie-based locale, no URL prefixes — verse deep links stay canonical.
+			strategy: ['cookie', 'preferredLanguage', 'baseLocale']
+		})
 	]
 });

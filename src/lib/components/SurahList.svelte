@@ -2,6 +2,8 @@
 	import type { Chapter } from '$lib/quran/types';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
+	import { m } from '$lib/paraglide/messages';
+	import { chapterName } from '$lib/quran/locale';
 
 	let { chapters }: { chapters: Chapter[] } = $props();
 
@@ -23,13 +25,13 @@
 	const active = $derived(Number(page.params.surah));
 </script>
 
-<div class="flex h-full flex-col">
+<div class="flex min-h-0 grow flex-col">
 	<div class="px-3 pb-2">
 		<input
 			type="search"
 			bind:value={query}
-			placeholder="Filter surahs…"
-			class="w-full rounded-lg border-stone-200 bg-white px-3 py-1.5 text-sm placeholder:text-stone-400 focus:border-accent focus:ring-accent"
+			placeholder={m.filter_surahs()}
+			class="bg-surface placeholder:text-faint focus:border-accent focus:ring-accent w-full rounded-lg border-edge px-3 py-1.5 text-sm"
 		/>
 	</div>
 
@@ -39,29 +41,27 @@
 				<a
 					href={resolve('/surah/[surah]', { surah: String(chapter.number) })}
 					class="group flex items-center gap-3 rounded-lg px-2 py-2 transition-colors
-						{active === chapter.number ? 'bg-accent-soft' : 'hover:bg-stone-100'}"
+						{active === chapter.number ? 'bg-accent-soft' : 'hover:bg-edge-soft'}"
 				>
 					<span
 						class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-xs font-semibold
 							{active === chapter.number
-							? 'bg-accent text-white'
-							: 'bg-stone-100 text-stone-500 group-hover:bg-white'}"
+							? 'bg-accent text-on-accent'
+							: 'bg-edge-soft text-muted group-hover:bg-surface'}"
 					>
 						{chapter.number}
 					</span>
 					<span class="min-w-0 grow">
-						<span class="block truncate text-sm font-medium text-stone-800"
-							>{chapter.nameSimple}</span
-						>
-						<span class="block truncate text-xs text-stone-400">
-							{chapter.nameEn} · {chapter.versesCount} verses
+						<span class="text-ink block truncate text-sm font-medium">{chapter.nameSimple}</span>
+						<span class="text-faint block truncate text-xs">
+							{chapterName(chapter)} · {m.verses_count({ count: chapter.versesCount })}
 						</span>
 					</span>
-					<span class="font-arabic shrink-0 text-lg text-stone-500">{chapter.nameArabic}</span>
+					<span class="font-arabic text-muted shrink-0 text-lg">{chapter.nameArabic}</span>
 				</a>
 			</li>
 		{:else}
-			<li class="px-3 py-6 text-center text-sm text-stone-400">No surah matches “{query}”</li>
+			<li class="px-3 py-6 text-center text-sm text-faint">{m.no_surah_match({ query })}</li>
 		{/each}
 	</ul>
 </div>

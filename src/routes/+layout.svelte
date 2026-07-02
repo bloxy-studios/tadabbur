@@ -1,7 +1,8 @@
 <script lang="ts">
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
-	import { app } from '$lib/app-state.svelte';
+	import { afterNavigate } from '$app/navigation';
+	import { app, arabicFontStacks } from '$lib/app-state.svelte';
 	import ActivityBar from '$lib/components/ActivityBar.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import type { LayoutProps } from './$types';
@@ -14,6 +15,29 @@
 			app.toggleSidebar();
 		}
 	}
+
+	afterNavigate(() => app.closeMobileSidebar());
+
+	// Theme is a class on <html> so it can differ from the OS preference.
+	$effect(() => {
+		const theme = app.prefs.theme;
+		const media = window.matchMedia('(prefers-color-scheme: dark)');
+		const apply = () =>
+			document.documentElement.classList.toggle(
+				'dark',
+				theme === 'dark' || (theme === 'system' && media.matches)
+			);
+		apply();
+		media.addEventListener('change', apply);
+		return () => media.removeEventListener('change', apply);
+	});
+
+	$effect(() => {
+		document.documentElement.style.setProperty(
+			'--arabic-font',
+			arabicFontStacks[app.prefs.arabicFont]
+		);
+	});
 </script>
 
 <svelte:head>
@@ -26,11 +50,23 @@
 <div class="flex h-dvh overflow-hidden">
 	<ActivityBar />
 
-	{#if app.prefs.sidebarOpen}
-		<div class="hidden md:contents">
-			<Sidebar chapters={data.chapters} />
-		</div>
+	{#if app.mobileSidebarOpen}
+		<button
+			type="button"
+			class="fixed inset-0 z-30 bg-black/40 md:hidden"
+			aria-label="Close sidebar"
+			onclick={() => app.closeMobileSidebar()}
+		></button>
 	{/if}
+
+	<div
+		class="{app.mobileSidebarOpen ? 'fixed inset-y-0 left-12 z-40 flex shadow-xl' : 'hidden'} {app
+			.prefs.sidebarOpen
+			? 'md:static md:z-auto md:flex md:shadow-none'
+			: 'md:hidden'}"
+	>
+		<Sidebar chapters={data.chapters} />
+	</div>
 
 	{@render children()}
 </div>

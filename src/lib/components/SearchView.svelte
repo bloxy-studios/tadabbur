@@ -1,7 +1,9 @@
 <script lang="ts">
 	import type { Chapter, SurahData, Verse } from '$lib/quran/types';
 	import { getSurah } from '$lib/quran/data';
+	import { verseTranslation } from '$lib/quran/locale';
 	import { resolve } from '$app/paths';
+	import { m } from '$lib/paraglide/messages';
 
 	let { chapters }: { chapters: Chapter[] } = $props();
 
@@ -31,11 +33,7 @@
 		const out: Hit[] = [];
 		for (const surah of corpus) {
 			for (const verse of surah.verses) {
-				if (
-					verse.en.toLowerCase().includes(q) ||
-					verse.id.toLowerCase().includes(q) ||
-					verse.arabic.includes(q)
-				) {
+				if (verseTranslation(verse).toLowerCase().includes(q) || verse.arabic.includes(q)) {
 					out.push({
 						surah: surah.surah,
 						surahName: chapters[surah.surah - 1].nameSimple,
@@ -49,24 +47,24 @@
 	});
 </script>
 
-<div class="flex h-full flex-col">
+<div class="flex min-h-0 grow flex-col">
 	<div class="px-3 pb-2">
 		<input
 			type="search"
 			bind:value={query}
 			onfocus={ensureCorpus}
-			placeholder="Search verses (EN, ID, Arabic)…"
-			class="w-full rounded-lg border-stone-200 bg-white px-3 py-1.5 text-sm placeholder:text-stone-400 focus:border-accent focus:ring-accent"
+			placeholder={m.search_placeholder()}
+			class="bg-surface placeholder:text-faint focus:border-accent focus:ring-accent w-full rounded-lg border-edge px-3 py-1.5 text-sm"
 		/>
-		<p class="mt-1.5 px-1 text-xs text-stone-400">
+		<p class="text-faint mt-1.5 px-1 text-xs">
 			{#if loading}
-				Downloading Quran text for offline search…
+				{m.search_downloading()}
 			{:else if query.trim().length > 0 && query.trim().length < 3}
-				Type at least 3 characters
+				{m.search_min_chars()}
 			{:else if query.trim().length >= 3}
-				{hits.length}{hits.length === 50 ? '+' : ''} result{hits.length === 1 ? '' : 's'}
+				{m.search_results({ count: `${hits.length}${hits.length === 50 ? '+' : ''}` })}
 			{:else}
-				Searches translations and Arabic text, fully on-device
+				{m.search_hint()}
 			{/if}
 		</p>
 	</div>
@@ -76,13 +74,15 @@
 			<li>
 				<a
 					href="{resolve('/surah/[surah]', { surah: String(hit.surah) })}#v{hit.verse.n}"
-					class="block rounded-lg px-2 py-2 hover:bg-stone-100"
+					class="hover:bg-edge-soft block rounded-lg px-2 py-2"
 				>
-					<span class="block text-xs font-semibold text-accent"
-						>{hit.surahName} {hit.verse.key}</span
-					>
-					<span class="mt-0.5 line-clamp-2 block text-sm text-stone-600">{hit.verse.en}</span>
-					<span class="mt-0.5 line-clamp-2 block text-xs text-stone-400">{hit.verse.id}</span>
+					<span class="text-accent block text-xs font-semibold">
+						{hit.surahName}
+						{hit.verse.key}
+					</span>
+					<span class="text-body mt-0.5 line-clamp-3 block text-sm">
+						{verseTranslation(hit.verse)}
+					</span>
 				</a>
 			</li>
 		{/each}

@@ -2,6 +2,8 @@
 	import { afterNavigate } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { app } from '$lib/app-state.svelte';
+	import { chapterName } from '$lib/quran/locale';
+	import { m } from '$lib/paraglide/messages';
 	import Icon from '$lib/components/Icon.svelte';
 	import InfoPane from '$lib/components/InfoPane.svelte';
 	import VerseCard from '$lib/components/VerseCard.svelte';
@@ -43,6 +45,11 @@
 		for (const node of main.querySelectorAll('[data-verse]')) observer.observe(node);
 		return () => observer.disconnect();
 	});
+
+	function toggleFocus() {
+		app.prefs.focusMode = !app.prefs.focusMode;
+		app.persistPrefs();
+	}
 </script>
 
 <svelte:head>
@@ -50,38 +57,55 @@
 </svelte:head>
 
 <main bind:this={main} class="min-w-0 grow overflow-y-auto">
-	<div class="mx-auto max-w-3xl px-6 pb-24 lg:px-10">
-		<header class="flex items-start justify-between gap-4 pt-10 pb-6">
-			<div>
-				<h1 class="text-2xl font-semibold tracking-tight text-stone-900">
+	<div class="mx-auto max-w-3xl px-4 pb-24 sm:px-6 lg:px-10">
+		<header class="flex items-start justify-between gap-4 pt-8 pb-6 sm:pt-10">
+			<div class="min-w-0">
+				<h1 class="text-ink text-xl font-semibold tracking-tight sm:text-2xl">
 					{chapter.nameSimple}
 				</h1>
-				<p class="mt-1 text-sm text-stone-400">
-					{chapter.nameEn} · {chapter.nameId} · {chapter.versesCount} verses ·
-					{chapter.revelationPlace === 'makkah' ? 'Makkah' : 'Madinah'}
-				</p>
+				{#if !app.prefs.focusMode}
+					<p class="text-faint mt-1 text-sm">
+						{chapterName(chapter)} · {m.verses_count({ count: chapter.versesCount })} ·
+						{chapter.revelationPlace === 'makkah' ? m.makkah() : m.madinah()}
+					</p>
+				{/if}
 			</div>
-			{#if !app.prefs.infoOpen}
+			<div class="flex shrink-0 items-center gap-1">
 				<button
 					type="button"
-					class="hidden rounded-lg p-2 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600 xl:block"
-					title="Show info pane"
-					aria-label="Show info pane"
-					onclick={() => {
-						app.prefs.infoOpen = true;
-						app.persistPrefs();
-					}}
+					class="rounded-lg p-2 transition-colors
+						{app.prefs.focusMode
+						? 'bg-accent-soft text-accent'
+						: 'text-faint hover:bg-edge-soft hover:text-body'}"
+					title={m.focus_mode()}
+					aria-label={m.focus_mode()}
+					aria-pressed={app.prefs.focusMode}
+					onclick={toggleFocus}
 				>
-					<Icon name="panel" />
+					<Icon name="focus" />
 				</button>
-			{/if}
+				{#if !app.prefs.infoOpen && !app.prefs.focusMode}
+					<button
+						type="button"
+						class="text-faint hover:bg-edge-soft hover:text-body hidden rounded-lg p-2 transition-colors xl:block"
+						title={m.show_info()}
+						aria-label={m.show_info()}
+						onclick={() => {
+							app.prefs.infoOpen = true;
+							app.persistPrefs();
+						}}
+					>
+						<Icon name="panel" />
+					</button>
+				{/if}
+			</div>
 		</header>
 
 		{#if chapter.bismillahPre}
 			<p
 				dir="rtl"
 				lang="ar"
-				class="font-arabic border-y border-stone-100 py-6 text-center text-3xl text-stone-800"
+				class="font-arabic border-edge-soft text-ink border-y py-6 text-center text-3xl"
 			>
 				بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
 			</p>
@@ -95,7 +119,7 @@
 			{#if prev}
 				<a
 					href={resolve('/surah/[surah]', { surah: String(prev.number) })}
-					class="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm font-medium text-stone-600 transition-colors hover:border-accent hover:text-accent"
+					class="bg-surface text-body hover:border-accent hover:text-accent flex items-center gap-2 rounded-xl border border-edge px-4 py-3 text-sm font-medium transition-colors"
 				>
 					<Icon name="chevron-left" size={16} />
 					{prev.number}. {prev.nameSimple}
@@ -106,7 +130,7 @@
 			{#if next}
 				<a
 					href={resolve('/surah/[surah]', { surah: String(next.number) })}
-					class="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm font-medium text-stone-600 transition-colors hover:border-accent hover:text-accent"
+					class="bg-surface text-body hover:border-accent hover:text-accent flex items-center gap-2 rounded-xl border border-edge px-4 py-3 text-sm font-medium transition-colors"
 				>
 					{next.number}. {next.nameSimple}
 					<Icon name="chevron-right" size={16} />
@@ -116,6 +140,6 @@
 	</div>
 </main>
 
-{#if app.prefs.infoOpen}
+{#if app.prefs.infoOpen && !app.prefs.focusMode}
 	<InfoPane {chapter} surahData={data.surahData} />
 {/if}

@@ -7,6 +7,29 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 
 		<meta name="text-scale" content="scale" />
+		<script>
+			// Apply theme + Arabic font before first paint to avoid a flash.
+			try {
+				var prefs = JSON.parse(localStorage.getItem('tadabbur:prefs') || '{}');
+				var theme = prefs.theme || 'system';
+				if (
+					theme === 'dark' ||
+					(theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)
+				) {
+					document.documentElement.classList.add('dark');
+				}
+				var fonts = {
+					amiri: "'Amiri Quran'",
+					scheherazade: "'Scheherazade New'",
+					noto: "'Noto Naskh Arabic'"
+				};
+				if (fonts[prefs.arabicFont]) {
+					document.documentElement.style.setProperty('--arabic-font', fonts[prefs.arabicFont]);
+				}
+			} catch (e) {
+				/* first visit, defaults apply */
+			}
+		</script>
 		%sveltekit.head%
 	</head>
 

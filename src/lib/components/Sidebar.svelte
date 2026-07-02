@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { app } from '$lib/app-state.svelte';
+	import { m } from '$lib/paraglide/messages';
 	import type { Chapter } from '$lib/quran/types';
 	import SurahList from './SurahList.svelte';
 	import SearchView from './SearchView.svelte';
@@ -9,16 +10,16 @@
 	let { chapters }: { chapters: Chapter[] } = $props();
 
 	const titles = {
-		surahs: 'Surahs',
-		search: 'Search',
-		notes: 'Notes',
-		settings: 'Settings'
+		surahs: m.nav_surahs,
+		search: m.nav_search,
+		notes: m.nav_notes,
+		settings: m.nav_settings
 	} as const;
 </script>
 
-<aside class="flex w-72 shrink-0 flex-col border-r border-stone-200 bg-paper">
-	<h2 class="px-4 pt-4 pb-2 text-xs font-semibold tracking-widest text-stone-400 uppercase">
-		{titles[app.view]}
+<aside class="bg-paper flex h-full w-72 shrink-0 flex-col border-r border-edge">
+	<h2 class="text-faint px-4 pt-4 pb-2 text-xs font-semibold tracking-widest uppercase">
+		{titles[app.view]()}
 	</h2>
 
 	{#if app.view === 'surahs'}

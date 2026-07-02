@@ -41,6 +41,8 @@
 		"wrangler": "^4.97.0"
 	},
 	"dependencies": {
-		"@fontsource/amiri-quran": "^5.2.10"
+		"@fontsource/amiri-quran": "^5.2.10",
+		"@fontsource/noto-naskh-arabic": "^5.2.11",
+		"@fontsource/scheherazade-new": "^5.2.9"
 	}
 }

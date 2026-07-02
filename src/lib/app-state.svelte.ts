@@ -1,6 +1,14 @@
 import { browser } from '$app/environment';
 
 export type SidebarView = 'surahs' | 'search' | 'notes' | 'settings';
+export type Theme = 'light' | 'dark' | 'system';
+export type ArabicFont = 'amiri' | 'scheherazade' | 'noto';
+
+export const arabicFontStacks: Record<ArabicFont, string> = {
+	amiri: "'Amiri Quran'",
+	scheherazade: "'Scheherazade New'",
+	noto: "'Noto Naskh Arabic'"
+};
 
 export interface LastRead {
 	surah: number;
@@ -11,21 +19,21 @@ const STORAGE_KEY = 'tadabbur:prefs';
 const LAST_READ_KEY = 'tadabbur:last-read';
 
 interface Prefs {
-	showEn: boolean;
-	showId: boolean;
+	theme: Theme;
+	arabicFont: ArabicFont;
 	arabicSize: number; // rem
+	focusMode: boolean;
 	sidebarOpen: boolean;
 	infoOpen: boolean;
-	tafsirLang: 'en' | 'id';
 }
 
 const defaults: Prefs = {
-	showEn: true,
-	showId: true,
+	theme: 'system',
+	arabicFont: 'amiri',
 	arabicSize: 2,
+	focusMode: false,
 	sidebarOpen: true,
-	infoOpen: true,
-	tafsirLang: 'en'
+	infoOpen: true
 };
 
 function loadJson<T>(key: string, fallback: T): T {
@@ -42,6 +50,8 @@ class AppState {
 	view: SidebarView = $state('surahs');
 	prefs: Prefs = $state(loadJson(STORAGE_KEY, defaults));
 	lastRead: LastRead | null = $state(loadJson<LastRead | null>(LAST_READ_KEY, null));
+	/** Mobile drawer visibility — session-only, never persisted. */
+	mobileSidebarOpen = $state(false);
 
 	persistPrefs() {
 		if (browser) localStorage.setItem(STORAGE_KEY, JSON.stringify(this.prefs));
@@ -52,14 +62,25 @@ class AppState {
 		if (browser) localStorage.setItem(LAST_READ_KEY, JSON.stringify(this.lastRead));
 	}
 
+	/**
+	 * Activity bar / shortcut behavior: switching views opens the sidebar,
+	 * re-activating the current view (or no view) toggles it. Desktop state is
+	 * persisted; the mobile drawer is per-session.
+	 */
 	toggleSidebar(view?: SidebarView) {
-		if (view && (view !== this.view || !this.prefs.sidebarOpen)) {
-			this.view = view;
-			this.prefs.sidebarOpen = true;
-		} else {
-			this.prefs.sidebarOpen = !this.prefs.sidebarOpen;
+		const mobile = browser && window.matchMedia('(max-width: 767px)').matches;
+		const isOpen = mobile ? this.mobileSidebarOpen : this.prefs.sidebarOpen;
+		const open = view && (view !== this.view || !isOpen) ? true : !isOpen;
+		if (view) this.view = view;
+		if (mobile) this.mobileSidebarOpen = open;
+		else {
+			this.prefs.sidebarOpen = open;
+			this.persistPrefs();
 		}
-		this.persistPrefs();
+	}
+
+	closeMobileSidebar() {
+		this.mobileSidebarOpen = false;
 	}
 }
 

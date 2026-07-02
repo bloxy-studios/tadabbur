@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { app } from '$lib/app-state.svelte';
+	import { chapterName } from '$lib/quran/locale';
+	import { m } from '$lib/paraglide/messages';
 	import Icon from '$lib/components/Icon.svelte';
 	import type { PageProps } from './$types';
 
@@ -8,7 +10,11 @@
 
 	const hour = new Date().getHours();
 	const greeting =
-		hour < 4 || hour >= 18 ? 'Good evening' : hour < 11 ? 'Good morning' : 'Good afternoon';
+		hour < 4 || hour >= 18
+			? m.greeting_evening
+			: hour < 11
+				? m.greeting_morning
+				: m.greeting_afternoon;
 
 	const lastChapter = $derived(app.lastRead ? data.chapters[app.lastRead.surah - 1] : null);
 
@@ -17,57 +23,56 @@
 </script>
 
 <main class="min-w-0 grow overflow-y-auto">
-	<div class="mx-auto max-w-2xl px-6 pt-20 pb-24">
-		<p class="font-arabic text-center text-5xl text-accent">تدبر</p>
-		<h1 class="mt-6 text-center text-2xl font-semibold tracking-tight text-stone-900">
-			{greeting}.
+	<div class="mx-auto max-w-2xl px-4 pt-16 pb-24 sm:px-6 sm:pt-20">
+		<p class="font-arabic text-accent text-center text-5xl">تدبر</p>
+		<h1 class="text-ink mt-6 text-center text-2xl font-semibold tracking-tight">
+			{greeting()}
 		</h1>
-		<p class="mx-auto mt-2 max-w-md text-center text-sm leading-relaxed text-stone-400">
-			Read, reflect and take your time with the Quran — with translations and tafsir alongside the
-			Uthmani text.
+		<p class="text-faint mx-auto mt-2 max-w-md text-center text-sm leading-relaxed">
+			{m.home_tagline()}
 		</p>
 
 		{#if lastChapter && app.lastRead}
 			<a
 				href="{resolve('/surah/[surah]', { surah: String(app.lastRead.surah) })}#v{app.lastRead
 					.verse}"
-				class="mt-10 flex items-center gap-4 rounded-2xl border border-stone-200 bg-white p-5 transition-colors hover:border-accent"
+				class="bg-surface hover:border-accent mt-10 flex items-center gap-4 rounded-2xl border border-edge p-5 transition-colors"
 			>
 				<span
-					class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent"
+					class="bg-accent-soft text-accent flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
 				>
 					<Icon name="book" />
 				</span>
 				<span class="min-w-0 grow">
-					<span class="block text-xs font-medium tracking-wide text-stone-400 uppercase">
-						Pick up where you left off
+					<span class="text-faint block text-xs font-medium tracking-wide uppercase">
+						{m.continue_reading()}
 					</span>
-					<span class="mt-0.5 block truncate text-sm font-semibold text-stone-800">
-						{lastChapter.nameSimple}, verse {app.lastRead.verse}
+					<span class="text-ink mt-0.5 block truncate text-sm font-semibold">
+						{lastChapter.nameSimple}, {m.verse_n({ n: app.lastRead.verse })}
 					</span>
 				</span>
-				<Icon name="chevron-right" size={16} class="shrink-0 text-stone-300" />
+				<Icon name="chevron-right" size={16} class="text-faint shrink-0" />
 			</a>
 		{/if}
 
-		<h2 class="mt-12 text-xs font-semibold tracking-widest text-stone-400 uppercase">
-			{lastChapter ? 'Or start somewhere new' : 'Start reading'}
+		<h2 class="text-faint mt-12 text-xs font-semibold tracking-widest uppercase">
+			{lastChapter ? m.or_start_new() : m.start_reading()}
 		</h2>
 		<div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
 			{#each suggestions as chapter (chapter.number)}
 				<a
 					href={resolve('/surah/[surah]', { surah: String(chapter.number) })}
-					class="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-4 py-3 transition-colors hover:border-accent"
+					class="bg-surface hover:border-accent flex items-center justify-between rounded-xl border border-edge px-4 py-3 transition-colors"
 				>
 					<span>
-						<span class="block text-sm font-medium text-stone-800">
+						<span class="text-ink block text-sm font-medium">
 							{chapter.number}. {chapter.nameSimple}
 						</span>
-						<span class="block text-xs text-stone-400"
-							>{chapter.nameEn} · {chapter.versesCount} verses</span
-						>
+						<span class="text-faint block text-xs">
+							{chapterName(chapter)} · {m.verses_count({ count: chapter.versesCount })}
+						</span>
 					</span>
-					<span class="font-arabic text-xl text-stone-500">{chapter.nameArabic}</span>
+					<span class="font-arabic text-muted text-xl">{chapter.nameArabic}</span>
 				</a>
 			{/each}
 		</div>

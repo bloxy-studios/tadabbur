@@ -2,13 +2,59 @@
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
 @import '@fontsource/amiri-quran';
+@import '@fontsource/scheherazade-new';
+@import '@fontsource/noto-naskh-arabic';
 
-@theme {
-	--font-arabic: 'Amiri Quran', 'Scheherazade New', 'Traditional Arabic', serif;
-	--color-paper: #faf9f7;
-	--color-paper-raised: #ffffff;
-	--color-accent: var(--color-emerald-700);
-	--color-accent-soft: var(--color-emerald-50);
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Semantic color tokens. Components only use these (via the @theme mapping
+ * below), so the dark theme is a pure variable swap.
+ */
+:root {
+	--arabic-font: 'Amiri Quran';
+	--paper: #faf9f7;
+	--surface: #ffffff;
+	--edge: #e7e5e4;
+	--edge-soft: #f0efed;
+	--ink: #1c1917;
+	--body: #44403c;
+	--muted: #78716c;
+	--faint: #a8a29e;
+	--accent: #047857;
+	--accent-soft: #ecfdf5;
+	--on-accent: #ffffff;
+	color-scheme: light;
+}
+
+.dark {
+	--paper: #171412;
+	--surface: #211d1a;
+	--edge: #35302b;
+	--edge-soft: #2a2622;
+	--ink: #f5f5f4;
+	--body: #d6d3d1;
+	--muted: #a8a29e;
+	--faint: #78716c;
+	--accent: #34d399;
+	--accent-soft: rgb(52 211 153 / 0.12);
+	--on-accent: #0c0a09;
+	color-scheme: dark;
+}
+
+@theme inline {
+	--font-arabic: var(--arabic-font), 'Amiri Quran', 'Scheherazade New', 'Noto Naskh Arabic', serif;
+	--color-paper: var(--paper);
+	--color-surface: var(--surface);
+	--color-edge: var(--edge);
+	--color-edge-soft: var(--edge-soft);
+	--color-ink: var(--ink);
+	--color-body: var(--body);
+	--color-muted: var(--muted);
+	--color-faint: var(--faint);
+	--color-accent: var(--accent);
+	--color-accent-soft: var(--accent-soft);
+	--color-on-accent: var(--on-accent);
 }
 
 html {
@@ -16,12 +62,11 @@ html {
 }
 
 body {
-	background-color: var(--color-paper);
-	color: var(--color-stone-800);
+	background-color: var(--paper);
+	color: var(--body);
 	overscroll-behavior-y: none;
 }
 
-/* Verse anchors land below nothing (no fixed header) but give breathing room */
 .verse-anchor {
 	scroll-margin-top: 1.5rem;
 }

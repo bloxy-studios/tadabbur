@@ -6,6 +6,8 @@
       "name": "tadabbur",
       "dependencies": {
         "@fontsource/amiri-quran": "^5.2.10",
+        "@fontsource/noto-naskh-arabic": "^5.2.11",
+        "@fontsource/scheherazade-new": "^5.2.9",
       },
       "devDependencies": {
         "@eslint/js": "^10.0.1",
@@ -129,6 +131,10 @@
     "@eslint/plugin-kit": ["@eslint/plugin-kit@0.7.2", "", { "dependencies": { "@eslint/core": "^1.2.1", "levn": "^0.4.1" } }, "sha512-+CNAzxglkrpNf/kKywqQfk74QjtceuOE7Qm+AF8miRvPF/wmmK5+OJOgVh3AVTT3RP2mH3+FOaxlE5v72owk0A=="],
 
     "@fontsource/amiri-quran": ["@fontsource/amiri-quran@5.2.10", "", {}, "sha512-QEGiNAsqQhtFmw1C7kEEAwu70/A0acVZi/DrZrkuz+4Dn57AAJENe0M8VTGjB4MrUeayb1D52mwGq52kyGwwdQ=="],
+
+    "@fontsource/noto-naskh-arabic": ["@fontsource/noto-naskh-arabic@5.2.11", "", {}, "sha512-mi4QOG3EK+iho//vjB+13Ww4Oy1ulkgBgUuVpVZQBjBPkaMoHOJZBpSIZOXTzL7ZFTvMPzdSTvt0juE9NVl+PA=="],
+
+    "@fontsource/scheherazade-new": ["@fontsource/scheherazade-new@5.2.9", "", {}, "sha512-czyaFAValINxIo8g81uc+vn1U6Yls/T945TcMHmjMaKev/B5WKc4OHpet7UfM1t0S5j/IeV7Bl2zT0lE7CDTBQ=="],
 
     "@humanfs/core": ["@humanfs/core@0.19.2", "", { "dependencies": { "@humanfs/types": "^0.15.0" } }, "sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA=="],
 

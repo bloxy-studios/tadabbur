@@ -1,42 +1,50 @@
-# sv
+# Tadabbur — تدبر
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+A Quran study app: read per surah with English and Indonesian translations and tafsir, in a fast,
+minimal, local-first 3-pane UI. Personal notes and progress sync (Convex + better-auth) are on the
+[roadmap](https://github.com/fahreziadh/tadabbur/milestones).
 
-## Creating a project
+## Stack
 
-If you're seeing this, you've probably already done this step. Congrats!
+- **SvelteKit** (Svelte 5) + Tailwind CSS 4, deployed to Cloudflare Workers
+- **Static Quran data** built ahead of time into per-surah JSON under `static/`, served from the
+  CDN and cached client-side — no backend reads for Quran content
+- **Convex** (planned, milestone v0.2) for user data only: notes, bookmarks, reading progress
 
-```sh
-# create a new project
-npx sv create my-app
-```
+## Data sources
 
-To recreate this project with the same configuration:
+All content is downloaded by `scripts/fetch-quran-data.ts` (run with `bun run scripts/fetch-quran-data.ts`).
+The script resolves resources by exact name against the live resource lists — never guessed IDs —
+and verifies verse counts (114 surahs, 6236 verses):
 
-```sh
-# recreate this project
-bun x sv@0.16.1 create --template minimal --types ts --add tailwindcss="plugins:typography,forms" paraglide="languageTags:en, es, id+demo:yes" mdsvex mcp="ide:claude-code+setup:local" sveltekit-adapter="adapter:cloudflare+cfTarget:workers" eslint prettier --install bun tadabbur
-```
+| Content                 | Source                                                        |
+| ----------------------- | ------------------------------------------------------------- |
+| Arabic (Uthmani script) | quran.com API v4                                              |
+| English translation     | Saheeh International (quran.com API)                          |
+| Indonesian translation  | Kemenag — Indonesian Islamic Affairs Ministry (quran.com API) |
+| English tafsir          | Tafsir Ibn Kathir, abridged (quran.com API)                   |
+| Indonesian tafsir       | Tafsir Kemenag (equran.id API v2)                             |
+
+Footnote markers are stripped from translations. Tafsir passages covering multiple consecutive
+verses are stored once with a `from`/`to` range.
+
+## Language & appearance
+
+One language setting (English / Indonesia, via paraglide) drives the UI copy, which Quran
+translation is shown, and the tafsir sources (EN: Ibn Kathir; ID: Tafsir Kemenag + Ibn Kathir).
+Settings also offer light/dark/system themes, three self-hosted Arabic typefaces (Amiri Quran,
+Scheherazade New, Noto Naskh Arabic), Arabic text size, and a focus mode for Arabic-only reading.
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
 ```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+bun install
+bun run dev
 ```
 
-## Building
+Useful scripts: `bun run check` (types), `bun run lint`, `bun run format`, `bun run build`
+(Cloudflare production build), `bun run preview`.
 
-To create a production version of your app:
+## Keyboard
 
-```sh
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+- `Cmd/Ctrl+B` — toggle sidebar
