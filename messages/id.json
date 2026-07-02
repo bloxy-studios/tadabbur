@@ -31,6 +31,8 @@
 	"tafsir_none": "Tafsir tidak tersedia untuk ayat ini.",
 	"tafsir_error": "Gagal memuat tafsir. Periksa koneksimu.",
 	"tafsir_covers": "Mencakup ayat {from}–{to}",
+	"open_full_view": "Buka tampilan penuh",
+	"close": "Tutup",
 	"copy_link": "Salin tautan",
 	"copied": "Tersalin!",
 	"focus_mode": "Mode fokus",

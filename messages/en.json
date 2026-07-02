@@ -31,6 +31,8 @@
 	"tafsir_none": "No tafsir available for this verse.",
 	"tafsir_error": "Could not load tafsir. Check your connection.",
 	"tafsir_covers": "Covers verses {from}–{to}",
+	"open_full_view": "Open full view",
+	"close": "Close",
 	"copy_link": "Copy link",
 	"copied": "Copied!",
 	"focus_mode": "Focus mode",
