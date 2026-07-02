@@ -10,6 +10,9 @@
 		player.playing && player.current?.surah === surah && player.current.verse === verse.n
 	);
 	const activeWord = $derived(highlightActive ? player.currentWord : null);
+	const isLoading = $derived(
+		player.loading && player.current?.surah === surah && player.current.verse === verse.n
+	);
 
 	let nearViewport = $state(false);
 	const showWordSpans = $derived(nearViewport || highlightActive);
@@ -39,7 +42,7 @@
 				class="transition-colors duration-100 {activeWord === i + 1 ? 'word-active' : ''}"
 				>{word.a + ' '}</span
 			>{/each}{:else}{plainText}{/if}<span
-		class="text-accent mx-1 inline-block"
+		class="text-accent mx-1 inline-block {isLoading ? 'animate-pulse' : ''}"
 		style="font-size: calc(var(--arabic-size) * 0.6)">﴿{verse.n}﴾</span
 	></span
 >

@@ -189,6 +189,15 @@ body {
 	contain-intrinsic-size: auto 16rem;
 }
 
+/*
+ * content-visibility's paint containment clips anything that escapes the
+ * card box — the play dropdown and its fixed backdrop. Lift it while the
+ * menu is open; the card is on-screen then anyway, so nothing is lost.
+ */
+.verse-card.menu-open {
+	content-visibility: visible;
+}
+
 /* One block per mushaf page in focus mode — same trick, page-sized. */
 .verse-page {
 	content-visibility: auto;

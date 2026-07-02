@@ -74,6 +74,15 @@
 		return () => clearTimeout(timer);
 	});
 
+	// Warm this surah's recitation (timings + audio metadata) so the first
+	// press of Play starts near-instantly. Tracks the reciter preference too.
+	$effect(() => {
+		const n = data.surah;
+		void app.prefs.reciter;
+		const timer = setTimeout(() => player.warm(n), 400);
+		return () => clearTimeout(timer);
+	});
+
 	let main: HTMLElement;
 
 	// The reader scrolls inside <main>, not the window, so handle scroll

@@ -10,6 +10,7 @@
 	import { getTimings } from '$lib/quran/timings';
 	import { player } from '$lib/player.svelte';
 	import { m } from '$lib/paraglide/messages';
+	import { resolve } from '$app/paths';
 	import { getLocale, setLocale, type Locale } from '$lib/paraglide/runtime';
 	import { fly } from 'svelte/transition';
 	import { dur } from '$lib/motion';
@@ -412,6 +413,39 @@
 							</div>
 						{/each}
 					</dl>
+				</div>
+			</section>
+
+			<section class="bg-surface overflow-hidden rounded-2xl border border-edge">
+				<h2
+					class="text-faint border-b border-edge-soft px-5 py-3 text-xs font-semibold tracking-widest uppercase"
+				>
+					{m.settings_about_section()}
+				</h2>
+				<div class="divide-y divide-edge-soft">
+					<a
+						href={resolve('/about')}
+						class="text-body hover:bg-edge-soft flex items-center justify-between px-5 py-3.5 text-sm font-medium transition-colors"
+					>
+						{m.settings_about_page()}
+						<Icon name="chevron-right" size={16} class="text-faint" />
+					</a>
+					<a
+						href={resolve('/roadmap')}
+						class="text-body hover:bg-edge-soft flex items-center justify-between px-5 py-3.5 text-sm font-medium transition-colors"
+					>
+						{m.settings_roadmap_page()}
+						<Icon name="chevron-right" size={16} class="text-faint" />
+					</a>
+					<a
+						href="https://github.com/fahreziadh/tadabbur"
+						target="_blank"
+						rel="noopener"
+						class="text-body hover:bg-edge-soft flex items-center justify-between px-5 py-3.5 text-sm font-medium transition-colors"
+					>
+						{m.settings_github()}
+						<Icon name="link" size={16} class="text-faint" />
+					</a>
 				</div>
 			</section>
 		</div>

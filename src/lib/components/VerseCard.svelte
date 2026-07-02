@@ -23,6 +23,7 @@
 	// range); the Play/Pause button only reflects whole-verse playback.
 	const highlightActive = $derived(player.playing && isCurrent);
 	const isPlaying = $derived(highlightActive && !player.rangeActive);
+	const isLoading = $derived(player.loading && isCurrent && !player.rangeActive);
 	const activeWord = $derived(highlightActive ? player.currentWord : null);
 
 	// Mounting every card in full made surah navigation block for hundreds of
@@ -91,7 +92,9 @@
 	aria-label={m.verse_aria({ key: verse.key })}
 	tabindex="0"
 	onkeydown={onArticleKeydown}
-	class="verse-anchor verse-card group border-edge-soft border-b py-6 last:border-b-0"
+	class="verse-anchor verse-card group border-edge-soft border-b py-6 last:border-b-0 {playMenuOpen
+		? 'menu-open'
+		: ''}"
 	{@attach (node) => lazyObserve(node, (visible) => (nearViewport = visible))}
 >
 	<p
@@ -119,6 +122,7 @@
 			<div
 				class="mt-3 flex flex-wrap items-center gap-1 transition-opacity group-hover:opacity-100 focus-within:opacity-100 can-hover:opacity-0 {tafsirOpen ||
 				isPlaying ||
+				isLoading ||
 				playMenuOpen
 					? 'opacity-100'
 					: ''}"
@@ -129,24 +133,28 @@
 				<div class="relative flex items-center">
 					<div
 						class="flex items-center rounded-md border transition-colors
-							{isPlaying || playMenuOpen ? 'border-accent/50' : 'border-edge'}"
+							{isPlaying || isLoading || playMenuOpen ? 'border-accent/50' : 'border-edge'}"
 					>
 						<button
 							type="button"
 							class="flex items-center gap-1 rounded-l-[5px] px-2 py-1 text-xs font-medium transition-colors no-hover:px-2.5 no-hover:py-2
-								{isPlaying
+								{isPlaying || isLoading
 								? 'bg-accent-soft text-accent'
 								: 'text-faint no-hover:text-body hover:bg-edge-soft hover:text-body'}"
 							onclick={() => player.toggle(surah, verse.n)}
 						>
-							<Icon name={isPlaying ? 'pause' : 'play'} size={14} />
+							<Icon
+								name={isLoading ? 'spinner' : isPlaying ? 'pause' : 'play'}
+								size={14}
+								class={isLoading ? 'animate-spin' : ''}
+							/>
 							{isPlaying ? m.pause() : m.play()}
 						</button>
 						<button
 							bind:this={menuButton}
 							type="button"
 							class="flex items-center self-stretch rounded-r-[5px] border-l pr-1 pl-0.5 transition-colors no-hover:pr-2 no-hover:pl-1.5
-								{isPlaying || playMenuOpen ? 'border-accent/50' : 'border-edge'}
+								{isPlaying || isLoading || playMenuOpen ? 'border-accent/50' : 'border-edge'}
 								{playMenuOpen
 								? 'bg-accent-soft text-accent'
 								: 'text-faint no-hover:text-body hover:bg-edge-soft hover:text-body'}"
