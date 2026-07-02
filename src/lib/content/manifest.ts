@@ -6,7 +6,7 @@
  * re-downloads the entire pack for every user.
  */
 
-export const CONTENT_CACHE = 'content-v1';
+export const CONTENT_CACHE = 'content-v2';
 
 export function isContentPath(pathname: string): boolean {
 	return pathname.startsWith('/quran/') || pathname.startsWith('/tafsir/');

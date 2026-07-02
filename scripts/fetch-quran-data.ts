@@ -221,8 +221,13 @@ interface ApiTafsir {
 function groupTafsir(entries: { verseNumber: number; text: string }[]) {
 	const groups: { from: number; to: number; text: string }[] = [];
 	for (const e of entries) {
-		if (!e.text.trim()) continue;
 		const last = groups[groups.length - 1];
+		if (!e.text.trim()) {
+			// quran.com puts a passage's text on its first verse only; empty
+			// follow-up verses are covered by the preceding passage.
+			if (last && e.verseNumber === last.to + 1) last.to = e.verseNumber;
+			continue;
+		}
 		if (last && last.text === e.text && e.verseNumber === last.to + 1) last.to = e.verseNumber;
 		else groups.push({ from: e.verseNumber, to: e.verseNumber, text: e.text });
 	}
@@ -231,8 +236,12 @@ function groupTafsir(entries: { verseNumber: number; text: string }[]) {
 
 await pool(chapters, 6, async (chapter) => {
 	const data = await getJson<{ tafsirs: ApiTafsir[] }>(
-		`${QURAN_API}/tafsirs/${enTafsir.id}/by_chapter/${chapter.number}`
+		`${QURAN_API}/tafsirs/${enTafsir.id}/by_chapter/${chapter.number}?per_page=300`
 	);
+	if (data.tafsirs.length !== chapter.versesCount)
+		throw new Error(
+			`Tafsir EN surah ${chapter.number}: expected ${chapter.versesCount}, got ${data.tafsirs.length}`
+		);
 	const grouped = groupTafsir(
 		data.tafsirs.map((t) => ({ verseNumber: Number(t.verse_key.split(':')[1]), text: t.text }))
 	);
