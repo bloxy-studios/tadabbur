@@ -1,40 +1,49 @@
 <script lang="ts">
 	import { getTafsir } from '$lib/quran/data';
-	import type { TafsirEntry, TranslationLang } from '$lib/quran/types';
+	import type { TafsirEntry, TafsirSlug } from '$lib/quran/types';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
 
 	let { surah, verse }: { surah: number; verse: number } = $props();
 
-	// English readers get Ibn Kathir; Indonesian readers get Tafsir Kemenag
-	// first plus Ibn Kathir (in English) as a second source.
-	const sources: { lang: TranslationLang; label: string }[] =
+	interface Source {
+		slug: TafsirSlug;
+		label: string;
+		/** Ibn Kathir ships as HTML; the Indonesian tafsirs are plain text. */
+		html: boolean;
+	}
+
+	// English readers get Ibn Kathir; Indonesian readers get Tafsir Kemenag and
+	// Al-Mukhtasar, plus Ibn Kathir (in English) as an extra source — no
+	// properly-licensed Indonesian Ibn Kathir exists.
+	const sources: Source[] =
 		getLocale() === 'id'
 			? [
-					{ lang: 'id', label: 'Tafsir Kemenag' },
-					{ lang: 'en', label: 'Ibn Kathir' }
+					{ slug: 'kemenag', label: 'Tafsir Kemenag', html: false },
+					{ slug: 'mukhtasar', label: 'Al-Mukhtasar', html: false },
+					{ slug: 'ibn-kathir', label: 'Ibn Kathir (EN)', html: true }
 				]
-			: [{ lang: 'en', label: 'Ibn Kathir' }];
+			: [{ slug: 'ibn-kathir', label: 'Ibn Kathir', html: true }];
 
-	let selected: TranslationLang = $state(sources[0].lang);
+	let selected: Source = $state(sources[0]);
 
-	async function loadEntry(lang: TranslationLang): Promise<TafsirEntry | undefined> {
-		const data = await getTafsir(fetch, lang, surah);
+	async function loadEntry(slug: TafsirSlug): Promise<TafsirEntry | undefined> {
+		const data = await getTafsir(fetch, slug, surah);
 		return data.entries.find((e) => verse >= e.from && verse <= e.to);
 	}
 
-	const entry = $derived(loadEntry(selected));
+	const entry = $derived(loadEntry(selected.slug));
 </script>
 
 <div class="bg-surface mt-3 rounded-xl border border-edge">
 	{#if sources.length > 1}
 		<div class="border-edge-soft flex items-center gap-1 border-b px-3 py-2">
-			{#each sources as source (source.lang)}
+			{#each sources as source (source.slug)}
 				<button
 					type="button"
 					class="rounded-md px-2.5 py-1 text-xs font-medium transition-colors
-						{selected === source.lang ? 'bg-accent-soft text-accent' : 'text-faint hover:text-body'}"
-					onclick={() => (selected = source.lang)}
+						{selected.slug === source.slug ? 'bg-accent-soft text-accent' : 'text-faint hover:text-body'}"
+					onclick={() => (selected = source)}
 				>
 					{source.label}
 				</button>
@@ -58,7 +67,7 @@
 						{m.tafsir_covers({ from: found.from, to: found.to })}
 					</p>
 				{/if}
-				{#if selected === 'en'}
+				{#if selected.html}
 					<div
 						class="prose prose-sm prose-stone dark:prose-invert max-w-none [&_h1]:text-base [&_h2]:text-sm"
 					>

@@ -1,4 +1,4 @@
-import type { Chapter, SurahData, TafsirData, TranslationLang } from './types';
+import type { Chapter, SurahData, TafsirData, TafsirSlug } from './types';
 
 /**
  * All Quran content is served as static JSON from /quran and /tafsir.
@@ -32,10 +32,10 @@ export function getSurah(fetcher: typeof fetch, surah: number): Promise<SurahDat
 
 export function getTafsir(
 	fetcher: typeof fetch,
-	lang: TranslationLang,
+	source: TafsirSlug,
 	surah: number
 ): Promise<TafsirData> {
-	return getJson(fetcher, `/tafsir/${lang}/${surah}.json`);
+	return getJson(fetcher, `/tafsir/${source}/${surah}.json`);
 }
 
 export function isValidSurah(n: number): boolean {

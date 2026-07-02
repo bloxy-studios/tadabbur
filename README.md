@@ -24,6 +24,7 @@ and verifies verse counts (114 surahs, 6236 verses):
 | Indonesian translation  | Kemenag — Indonesian Islamic Affairs Ministry (quran.com API) |
 | English tafsir          | Tafsir Ibn Kathir, abridged (quran.com API)                   |
 | Indonesian tafsir       | Tafsir Kemenag (equran.id API v2)                             |
+| Indonesian tafsir       | Al-Mukhtasar — Tafsir Center (QUL, via spa5k/tafsir_api)      |
 
 Footnote markers are stripped from translations. Tafsir passages covering multiple consecutive
 verses are stored once with a `from`/`to` range.

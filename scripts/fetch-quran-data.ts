@@ -5,6 +5,7 @@
  * Sources:
  * - Arabic (Uthmani), EN/ID translations, chapter metadata, EN tafsir: quran.com API v4
  * - ID tafsir (Tafsir Kemenag): equran.id API v2
+ * - ID tafsir (Al-Mukhtasar, Tafsir Center): QUL resource 260 via the spa5k/tafsir_api mirror
  *
  * Resources are selected by exact name match against the live resource lists
  * (never hardcoded-by-guess); the chosen IDs are logged and verified.
@@ -201,7 +202,7 @@ await pool(chapters, 6, async (chapter) => {
 	const grouped = groupTafsir(
 		data.tafsirs.map((t) => ({ verseNumber: Number(t.verse_key.split(':')[1]), text: t.text }))
 	);
-	await write(`tafsir/en/${chapter.number}.json`, {
+	await write(`tafsir/ibn-kathir/${chapter.number}.json`, {
 		surah: chapter.number,
 		source: enTafsir.name,
 		entries: grouped
@@ -223,12 +224,36 @@ await pool(chapters, 4, async (chapter) => {
 		);
 	}
 	const grouped = groupTafsir(data.data.tafsir.map((t) => ({ verseNumber: t.ayat, text: t.teks })));
-	await write(`tafsir/id/${chapter.number}.json`, {
+	await write(`tafsir/kemenag/${chapter.number}.json`, {
 		surah: chapter.number,
 		source: 'Tafsir Kemenag',
 		entries: grouped
 	});
-	console.log(`  tafsir id ${chapter.number} (${grouped.length} passages)`);
+	console.log(`  tafsir kemenag ${chapter.number} (${grouped.length} passages)`);
 });
-console.log('✓ indonesian tafsir downloaded');
+console.log('✓ tafsir kemenag downloaded');
+
+// --- 6. Tafsir ID (Al-Mukhtasar, Tafsir Center — QUL via spa5k mirror) -------
+
+const MUKHTASAR_CDN =
+	'https://cdn.jsdelivr.net/gh/spa5k/tafsir_api@main/tafsir/indonesian-mokhtasar';
+
+await pool(chapters, 6, async (chapter) => {
+	const entries = await getJson<{ ayah: number; text: string }[]>(
+		`${MUKHTASAR_CDN}/${chapter.number}.json`
+	);
+	if (entries.length !== chapter.versesCount) {
+		throw new Error(
+			`Mukhtasar surah ${chapter.number}: expected ${chapter.versesCount}, got ${entries.length}`
+		);
+	}
+	const grouped = groupTafsir(entries.map((t) => ({ verseNumber: t.ayah, text: t.text })));
+	await write(`tafsir/mukhtasar/${chapter.number}.json`, {
+		surah: chapter.number,
+		source: 'Al-Mukhtasar (Tafsir Center)',
+		entries: grouped
+	});
+	console.log(`  tafsir mukhtasar ${chapter.number} (${grouped.length} passages)`);
+});
+console.log('✓ tafsir al-mukhtasar downloaded');
 console.log('Done.');

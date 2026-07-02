@@ -39,3 +39,5 @@ export interface TafsirData {
 }
 
 export type TranslationLang = 'en' | 'id';
+
+export type TafsirSlug = 'ibn-kathir' | 'kemenag' | 'mukhtasar';
