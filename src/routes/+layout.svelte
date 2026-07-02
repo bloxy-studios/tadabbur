@@ -1,8 +1,10 @@
 <script lang="ts">
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
+	import { fade, fly } from 'svelte/transition';
 	import { afterNavigate } from '$app/navigation';
 	import { getSurah } from '$lib/quran/data';
+	import { dur } from '$lib/motion';
 	import { app, arabicFontStacks } from '$lib/app-state.svelte';
 	import ActivityBar from '$lib/components/ActivityBar.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
@@ -86,18 +88,22 @@
 			type="button"
 			class="fixed inset-0 z-30 bg-black/40 md:hidden"
 			aria-label="Close sidebar"
+			transition:fade={{ duration: dur(150) }}
 			onclick={() => app.closeMobileSidebar()}
 		></button>
 	{/if}
 
-	<div
-		class="{app.mobileSidebarOpen ? 'fixed inset-y-0 left-12 z-40 flex shadow-xl' : 'hidden'} {app
-			.prefs.sidebarOpen
-			? 'md:static md:z-auto md:flex md:shadow-none'
-			: 'md:hidden'}"
-	>
-		<Sidebar chapters={data.chapters} />
-	</div>
+	{#if app.mobileSidebarOpen || app.prefs.sidebarOpen}
+		<div
+			transition:fly={{ x: -16, duration: dur(180) }}
+			class="{app.mobileSidebarOpen ? 'fixed inset-y-0 left-12 z-40 flex shadow-xl' : 'hidden'} {app
+				.prefs.sidebarOpen
+				? 'md:static md:z-auto md:flex md:shadow-none'
+				: 'md:hidden'}"
+		>
+			<Sidebar chapters={data.chapters} />
+		</div>
+	{/if}
 
 	{@render children()}
 </div>

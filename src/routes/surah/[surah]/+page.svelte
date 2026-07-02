@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { fade } from 'svelte/transition';
 	import { afterNavigate } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { dur } from '$lib/motion';
 	import { app } from '$lib/app-state.svelte';
 	import { player } from '$lib/player.svelte';
 	import { chapterName } from '$lib/quran/locale';
@@ -214,9 +216,11 @@
 		{/if}
 
 		{#if surahData}
-			{#each surahData.verses as verse (verse.key)}
-				<VerseCard surah={surahData.surah} {verse} eager={verse.n <= EAGER_COUNT} />
-			{/each}
+			<div in:fade={{ duration: dur(150) }}>
+				{#each surahData.verses as verse (verse.key)}
+					<VerseCard surah={surahData.surah} {verse} eager={verse.n <= EAGER_COUNT} />
+				{/each}
+			</div>
 		{:else}
 			{#each skeletonRows as i (i)}
 				<div class="border-edge-soft animate-pulse border-b py-6">

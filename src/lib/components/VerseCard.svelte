@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { fly, slide } from 'svelte/transition';
 	import { app } from '$lib/app-state.svelte';
 	import { player } from '$lib/player.svelte';
+	import { dur } from '$lib/motion';
 	import { lazyObserve } from '$lib/lazy-cards';
 	import type { Verse } from '$lib/quran/types';
 	import { verseTranslation } from '$lib/quran/locale';
@@ -129,6 +131,7 @@
 							onclick={() => (playMenuOpen = false)}
 						></button>
 						<div
+							transition:fly={{ y: -4, duration: dur(120) }}
 							class="bg-surface absolute top-full left-0 z-30 mt-1 w-52 rounded-lg border border-edge py-1 shadow-lg"
 							role="menu"
 						>
@@ -187,7 +190,9 @@
 			</div>
 
 			{#if tafsirOpen}
-				<TafsirPanel {surah} verse={verse.n} />
+				<div transition:slide={{ duration: dur(200) }}>
+					<TafsirPanel {surah} verse={verse.n} />
+				</div>
 			{/if}
 		{/if}
 	{/if}

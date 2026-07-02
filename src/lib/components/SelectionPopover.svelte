@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { fly } from 'svelte/transition';
 	import { player } from '$lib/player.svelte';
+	import { dur } from '$lib/motion';
 	import type { Verse } from '$lib/quran/types';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
@@ -19,6 +21,7 @@
 </script>
 
 <div
+	in:fly={{ y: 6, duration: dur(140) }}
 	class="bg-surface fixed z-50 max-w-md min-w-48 -translate-x-1/2 -translate-y-full rounded-xl border border-edge p-3 shadow-xl"
 	style="left: {x}px; top: {y - 10}px"
 	role="tooltip"

@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { fade } from 'svelte/transition';
 	import { app } from '$lib/app-state.svelte';
+	import { dur } from '$lib/motion';
 	import { m } from '$lib/paraglide/messages';
 	import type { Chapter } from '$lib/quran/types';
 	import SurahList from './SurahList.svelte';
@@ -22,13 +24,17 @@
 		{titles[app.view]()}
 	</h2>
 
-	{#if app.view === 'surahs'}
-		<SurahList {chapters} />
-	{:else if app.view === 'search'}
-		<SearchView {chapters} />
-	{:else if app.view === 'notes'}
-		<NotesView />
-	{:else}
-		<SettingsView />
-	{/if}
+	{#key app.view}
+		<div class="flex min-h-0 grow flex-col" in:fade={{ duration: dur(120) }}>
+			{#if app.view === 'surahs'}
+				<SurahList {chapters} />
+			{:else if app.view === 'search'}
+				<SearchView {chapters} />
+			{:else if app.view === 'notes'}
+				<NotesView />
+			{:else}
+				<SettingsView />
+			{/if}
+		</div>
+	{/key}
 </aside>
