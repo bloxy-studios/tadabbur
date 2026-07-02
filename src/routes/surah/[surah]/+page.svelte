@@ -81,12 +81,17 @@
 		return () => observer.disconnect();
 	});
 
-	// Keep the verse being recited in view during follow-along playback.
+	// Keep the verse being recited in view during follow-along playback —
+	// but only scroll when it actually drifts out of the comfortable band,
+	// otherwise constant re-centering makes the whole layout feel jittery.
 	$effect(() => {
 		if (!player.playing || player.current?.surah !== data.surah) return;
-		document
-			.getElementById(`v${player.current.verse}`)
-			?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+		const el = document.getElementById(`v${player.current.verse}`);
+		if (!el) return;
+		const box = main.getBoundingClientRect();
+		const rect = el.getBoundingClientRect();
+		const inView = rect.top >= box.top && rect.top <= box.top + box.height * 0.7;
+		if (!inView) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
 	});
 
 	// Selecting (blocking) Arabic words opens a word-by-word popover.
