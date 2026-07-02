@@ -1,5 +1,7 @@
 # Tadabbur — تدبر
 
+![Tadabbur — a calm, offline-first Quran reader for deep reflection](static/og.png)
+
 A Quran study app: read per surah with English and Indonesian translations and tafsir, in a fast,
 minimal, local-first 3-pane UI. Personal notes and progress sync (Convex + better-auth) are on the
 [roadmap](https://github.com/fahreziadh/tadabbur/milestones).
