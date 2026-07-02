@@ -19,7 +19,7 @@
 
 <nav
 	data-pane
-	class="bg-paper z-40 flex w-12 shrink-0 flex-col items-center gap-1 border-r border-edge py-3"
+	class="bg-paper z-40 hidden w-12 shrink-0 flex-col items-center gap-1 border-r border-edge py-3 md:flex"
 	aria-label="Primary"
 >
 	<a

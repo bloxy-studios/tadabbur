@@ -11,6 +11,8 @@ class Player {
 	current: { surah: number; verse: number } | null = $state(null);
 	currentWord: number | null = $state(null);
 	playing = $state(false);
+	/** True from a play request until audio is actually sounding. */
+	loading = $state(false);
 	/** True while a selected word range (not the whole verse) is playing. */
 	rangeActive = $state(false);
 	/** True while whole-surah (follow-along) playback is the active intent — not single-ayah, not a word range. */
@@ -55,6 +57,30 @@ class Player {
 	}
 
 	/**
+	 * Prefetches the surah's timings and points the idle audio element at its
+	 * MP3, so the first play only needs the seek instead of three round-trips
+	 * (timings JSON, then metadata, then the seek itself).
+	 */
+	warm(surah: number) {
+		if (!browser) return;
+		// Data Saver users opt out of speculation — first play just pays the fetch.
+		if ((navigator as { connection?: { saveData?: boolean } }).connection?.saveData) return;
+		const reciter = app.prefs.reciter;
+		const key = `${reciter}:${surah}`;
+		if (this.#loadedKey === key) return;
+		getTimings(reciter, surah)
+			.then((timings) => {
+				if (this.current || this.#loadedKey === key) return;
+				const audio = this.#ensure();
+				audio.preload = 'metadata';
+				audio.src = timings.audioUrl;
+				this.#timings = timings;
+				this.#loadedKey = key;
+			})
+			.catch(() => {});
+	}
+
+	/**
 	 * Plays a verse from its first word. Default stops at the end of the
 	 * ayah; `continuous` keeps reciting through the surah; `words` plays only
 	 * that word range (selection).
@@ -70,6 +96,12 @@ class Player {
 		// keeps playing audibly until the seek below completes.
 		audio.pause();
 		const token = ++this.#playToken;
+		this.current = { surah, verse };
+		this.loading = true;
+		this.rangeActive = !!opts?.words;
+		// Whole-surah intent — set on every play() so a later single-ayah or
+		// word-range play() clears a stale true. A range is never whole-surah.
+		this.continuous = opts?.continuous === true && !opts?.words;
 		try {
 			const key = `${app.prefs.reciter}:${surah}`;
 			if (this.#loadedKey !== key) {
@@ -77,14 +109,22 @@ class Player {
 				if (token !== this.#playToken) return;
 				audio.src = this.#timings.audioUrl;
 				this.#loadedKey = key;
-				await new Promise<void>((resolve) => {
-					if (audio.readyState >= 1) resolve();
-					else audio.addEventListener('loadedmetadata', () => resolve(), { once: true });
+			}
+			// The src may also have been set by warm() with metadata still in
+			// flight — always wait until the element can seek.
+			if (audio.readyState < 1) {
+				await new Promise<void>((resolve, reject) => {
+					audio.addEventListener('loadedmetadata', () => resolve(), { once: true });
+					audio.addEventListener('error', () => reject(new Error('audio failed')), { once: true });
 				});
 				if (token !== this.#playToken) return;
 			}
 			const timing = this.#timings?.verses[verse - 1];
-			if (!timing) return;
+			if (!timing) {
+				this.current = null;
+				this.rangeActive = false;
+				return;
+			}
 			// QDC verse windows (timestamp_from/to) bleed into neighboring
 			// verses; the word segments are precise, so start at the first
 			// word and stop after the last one.
@@ -92,10 +132,6 @@ class Player {
 			const lastSeg = timing.segments[timing.segments.length - 1];
 			let startMs = firstSeg ? firstSeg[1] : timing.from;
 			this.#stopAt = opts?.continuous ? null : lastSeg ? lastSeg[2] : timing.to;
-			// Whole-surah intent — unconditionally set so a later single-ayah or
-			// word-range play() clears a stale true. A range is never whole-surah.
-			this.continuous = opts?.continuous === true && !opts?.words;
-			this.rangeActive = false;
 			if (opts?.words) {
 				const segments = timing.segments.filter(
 					(s) => s[0] >= opts.words!.from && s[0] <= opts.words!.to
@@ -103,10 +139,8 @@ class Player {
 				if (segments.length) {
 					startMs = segments[0][1];
 					this.#stopAt = segments[segments.length - 1][2];
-					this.rangeActive = true;
-				}
+				} else this.rangeActive = false;
 			}
-			this.current = { surah, verse };
 			audio.currentTime = startMs / 1000;
 			// Only start output once the seek has actually landed.
 			if (audio.seeking) {
@@ -119,8 +153,11 @@ class Player {
 		} catch {
 			if (token === this.#playToken) {
 				this.current = null;
+				this.rangeActive = false;
 				this.#loadedKey = '';
 			}
+		} finally {
+			if (token === this.#playToken) this.loading = false;
 		}
 	}
 
@@ -132,8 +169,9 @@ class Player {
 	toggle(surah: number, verse: number) {
 		if (!browser) return;
 		const isCurrent = this.current?.surah === surah && this.current.verse === verse;
-		if (this.playing && isCurrent && !this.rangeActive) {
-			this.#ensure().pause();
+		if (isCurrent && !this.rangeActive && (this.playing || this.loading)) {
+			if (this.loading) this.stop();
+			else this.#ensure().pause();
 			return;
 		}
 		void this.play(surah, verse);
@@ -153,6 +191,7 @@ class Player {
 		this.#playToken++;
 		this.#audio.pause();
 		this.current = null;
+		this.loading = false;
 		this.rangeActive = false;
 		this.continuous = false;
 		this.#stopAt = null;

@@ -24,3 +24,6 @@ vite.config.ts.timestamp-*
 # Paraglide
 src/lib/paraglide
 project.inlang/cache/
+
+# Generated content packs (scripts/build-content-pack.ts)
+/static/pack

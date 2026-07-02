@@ -29,7 +29,9 @@
 </script>
 
 {#if now}
-	<div class="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 z-40 -translate-x-1/2">
+	<div
+		class="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-1/2 z-40 -translate-x-1/2 md:bottom-[calc(1rem+env(safe-area-inset-bottom))]"
+	>
 		<div
 			transition:fly={{ y: 12, duration: dur(180) }}
 			class="bg-surface border-edge flex items-center gap-0.5 rounded-full border p-1 shadow-lg"
@@ -41,7 +43,11 @@
 				aria-label={player.playing ? m.pause() : m.resume()}
 				onclick={() => player.togglePause()}
 			>
-				<Icon name={player.playing ? 'pause' : 'play'} size={16} />
+				<Icon
+					name={player.loading ? 'spinner' : player.playing ? 'pause' : 'play'}
+					size={16}
+					class={player.loading ? 'animate-spin' : ''}
+				/>
 			</button>
 			<!-- eslint-disable svelte/no-navigation-without-resolve -- resolve()d in the derived, plus a #v hash the resolver can't express -->
 			<a

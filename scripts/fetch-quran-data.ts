@@ -5,7 +5,7 @@
  * Sources:
  * - Arabic (Uthmani), EN/ID translations, chapter metadata, EN tafsir: quran.com API v4
  * - ID tafsir (Tafsir Kemenag): equran.id API v2
- * - ID tafsir (Al-Mukhtasar, Tafsir Center): QUL resource 260 via the spa5k/tafsir_api mirror
+ * - ID tafsir (Al-Mukhtasar, Tafsir As-Sa'di): QUL editions via the spa5k/tafsir_api mirror
  *
  * Resources are selected by exact name match against the live resource lists
  * (never hardcoded-by-guess); the chosen IDs are logged and verified.
@@ -221,8 +221,13 @@ interface ApiTafsir {
 function groupTafsir(entries: { verseNumber: number; text: string }[]) {
 	const groups: { from: number; to: number; text: string }[] = [];
 	for (const e of entries) {
-		if (!e.text.trim()) continue;
 		const last = groups[groups.length - 1];
+		if (!e.text.trim()) {
+			// quran.com puts a passage's text on its first verse only; empty
+			// follow-up verses are covered by the preceding passage.
+			if (last && e.verseNumber === last.to + 1) last.to = e.verseNumber;
+			continue;
+		}
 		if (last && last.text === e.text && e.verseNumber === last.to + 1) last.to = e.verseNumber;
 		else groups.push({ from: e.verseNumber, to: e.verseNumber, text: e.text });
 	}
@@ -231,8 +236,12 @@ function groupTafsir(entries: { verseNumber: number; text: string }[]) {
 
 await pool(chapters, 6, async (chapter) => {
 	const data = await getJson<{ tafsirs: ApiTafsir[] }>(
-		`${QURAN_API}/tafsirs/${enTafsir.id}/by_chapter/${chapter.number}`
+		`${QURAN_API}/tafsirs/${enTafsir.id}/by_chapter/${chapter.number}?per_page=300`
 	);
+	if (data.tafsirs.length !== chapter.versesCount)
+		throw new Error(
+			`Tafsir EN surah ${chapter.number}: expected ${chapter.versesCount}, got ${data.tafsirs.length}`
+		);
 	const grouped = groupTafsir(
 		data.tafsirs.map((t) => ({ verseNumber: Number(t.verse_key.split(':')[1]), text: t.text }))
 	);
@@ -267,27 +276,41 @@ await pool(chapters, 4, async (chapter) => {
 });
 console.log('✓ tafsir kemenag downloaded');
 
-// --- 6. Tafsir ID (Al-Mukhtasar, Tafsir Center — QUL via spa5k mirror) -------
+// --- 6. Tafsir ID (QUL editions via the spa5k/tafsir_api mirror) -------------
 
-const MUKHTASAR_CDN =
-	'https://cdn.jsdelivr.net/gh/spa5k/tafsir_api@main/tafsir/indonesian-mokhtasar';
+const SPA5K_CDN = 'https://cdn.jsdelivr.net/gh/spa5k/tafsir_api@main/tafsir';
+const SPA5K_SOURCES = [
+	{ slug: 'mukhtasar', edition: 'indonesian-mokhtasar', source: 'Al-Mukhtasar (Tafsir Center)' },
+	{ slug: 'as-saadi', edition: 'id-tafsir-as-saadi', source: "Tafsir As-Sa'di" }
+];
 
-await pool(chapters, 6, async (chapter) => {
-	const entries = await getJson<{ ayah: number; text: string }[]>(
-		`${MUKHTASAR_CDN}/${chapter.number}.json`
-	);
-	if (entries.length !== chapter.versesCount) {
-		throw new Error(
-			`Mukhtasar surah ${chapter.number}: expected ${chapter.versesCount}, got ${entries.length}`
+for (const { slug, edition, source } of SPA5K_SOURCES) {
+	await pool(chapters, 6, async (chapter) => {
+		const entries = await getJson<{ ayah: number; text: string }[]>(
+			`${SPA5K_CDN}/${edition}/${chapter.number}.json`
 		);
-	}
-	const grouped = groupTafsir(entries.map((t) => ({ verseNumber: t.ayah, text: t.text })));
-	await write(`tafsir/mukhtasar/${chapter.number}.json`, {
-		surah: chapter.number,
-		source: 'Al-Mukhtasar (Tafsir Center)',
-		entries: grouped
+		// Some QUL editions have isolated editorial gaps (e.g. As-Sa'di 72:11);
+		// tolerate those but fail on anything that looks like a truncated file.
+		const seen = new Set(entries.map((t) => t.ayah));
+		const missing = Array.from({ length: chapter.versesCount }, (_, i) => i + 1).filter(
+			(v) => !seen.has(v)
+		);
+		if (missing.length > 3) {
+			throw new Error(
+				`${source} surah ${chapter.number}: expected ${chapter.versesCount}, got ${entries.length}`
+			);
+		}
+		if (missing.length) {
+			console.warn(`  ⚠ ${source} surah ${chapter.number}: no text for ayah ${missing.join(', ')}`);
+		}
+		const grouped = groupTafsir(entries.map((t) => ({ verseNumber: t.ayah, text: t.text })));
+		await write(`tafsir/${slug}/${chapter.number}.json`, {
+			surah: chapter.number,
+			source,
+			entries: grouped
+		});
+		console.log(`  tafsir ${slug} ${chapter.number} (${grouped.length} passages)`);
 	});
-	console.log(`  tafsir mukhtasar ${chapter.number} (${grouped.length} passages)`);
-});
-console.log('✓ tafsir al-mukhtasar downloaded');
+	console.log(`✓ tafsir ${slug} downloaded`);
+}
 console.log('Done.');

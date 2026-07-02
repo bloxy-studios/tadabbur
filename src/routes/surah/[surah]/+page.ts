@@ -1,7 +1,11 @@
 import { error } from '@sveltejs/kit';
 import { browser } from '$app/environment';
 import { getCachedSurah, getSurah, isValidSurah } from '$lib/quran/data';
-import type { PageLoad } from './$types';
+import type { EntryGenerator, PageLoad } from './$types';
+
+// With ssr off the prerenderer can't discover links, so list every surah.
+export const entries: EntryGenerator = () =>
+	Array.from({ length: 114 }, (_, i) => ({ surah: `${i + 1}` }));
 
 export const load: PageLoad = async ({ fetch, params }) => {
 	const surah = Number(params.surah);

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import './layout.css';
-	import favicon from '$lib/assets/favicon.svg';
 	import { fade, fly } from 'svelte/transition';
 	import { afterNavigate } from '$app/navigation';
 	import { getSurah } from '$lib/quran/data';
@@ -8,6 +7,8 @@
 	import { m } from '$lib/paraglide/messages';
 	import { app, arabicFontStacks, darkThemes } from '$lib/app-state.svelte';
 	import ActivityBar from '$lib/components/ActivityBar.svelte';
+	import BottomNav from '$lib/components/BottomNav.svelte';
+	import OfflineSetup from '$lib/components/OfflineSetup.svelte';
 	import NowPlayingPill from '$lib/components/NowPlayingPill.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import type { LayoutProps } from './$types';
@@ -119,6 +120,19 @@
 		document.documentElement.style.setProperty('--arabic-size', `${app.prefs.arabicSize}rem`);
 	});
 
+	// Browsers only re-check the service worker script on navigation and every
+	// ~24h — an installed PWA that stays open would ride an old deploy for
+	// days. Nudge the check whenever the app regains visibility.
+	$effect(() => {
+		if (!('serviceWorker' in navigator)) return;
+		const check = () => {
+			if (document.visibilityState === 'visible')
+				void navigator.serviceWorker.getRegistration().then((reg) => reg?.update());
+		};
+		document.addEventListener('visibilitychange', check);
+		return () => document.removeEventListener('visibilitychange', check);
+	});
+
 	// Local-first: once the app settles, quietly pull every surah into memory
 	// (~8.6MB JSON) during idle time so any surah switch is instant.
 	$effect(() => {
@@ -149,14 +163,13 @@
 </script>
 
 <svelte:head>
-	<link rel="icon" href={favicon} />
 	<title>Tadabbur</title>
 </svelte:head>
 
 <svelte:window onkeydown={onKeydown} />
 
 <div
-	class="flex h-dvh overflow-hidden pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]"
+	class="flex h-dvh overflow-hidden pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[calc(3.5rem+env(safe-area-inset-bottom))] pl-[env(safe-area-inset-left)] md:pb-0"
 >
 	<a
 		href="#main-content"
@@ -179,8 +192,9 @@
 	{#if app.mobileSidebarOpen || app.prefs.sidebarOpen}
 		<div
 			transition:fly={{ x: -16, duration: dur(180) }}
-			class="{app.mobileSidebarOpen ? 'fixed inset-y-0 left-12 z-40 flex shadow-xl' : 'hidden'} {app
-				.prefs.sidebarOpen
+			class="{app.mobileSidebarOpen
+				? 'fixed top-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 z-40 flex shadow-xl'
+				: 'hidden'} {app.prefs.sidebarOpen
 				? 'md:static md:z-auto md:flex md:shadow-none'
 				: 'md:hidden'}"
 		>
@@ -191,4 +205,6 @@
 	{@render children()}
 
 	<NowPlayingPill chapters={data.chapters} />
+	<BottomNav />
+	<OfflineSetup />
 </div>
