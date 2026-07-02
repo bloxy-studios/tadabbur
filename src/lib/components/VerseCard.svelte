@@ -38,7 +38,9 @@
 <article
 	id="v{verse.n}"
 	data-verse={verse.n}
-	class="verse-anchor group border-edge-soft border-b py-6 [content-visibility:auto] [contain-intrinsic-size:auto_190px] last:border-b-0"
+	class="verse-anchor group border-edge-soft border-b py-6 last:border-b-0 {playMenuOpen
+		? ''
+		: '[content-visibility:auto] [contain-intrinsic-size:auto_190px]'}"
 >
 	<p
 		dir="rtl"
@@ -71,26 +73,32 @@
 				{verse.key}
 			</span>
 			<div class="relative flex items-center">
-				<button
-					type="button"
-					class="flex items-center gap-1 rounded-l-md px-2 py-1 text-xs font-medium transition-colors
-						{isPlaying ? 'bg-accent-soft text-accent' : 'text-faint hover:bg-edge-soft hover:text-body'}"
-					onclick={() => player.toggle(surah, verse.n)}
+				<div
+					class="flex items-center rounded-md border transition-colors
+						{isPlaying || playMenuOpen ? 'border-accent/50' : 'border-edge'}"
 				>
-					<Icon name={isPlaying ? 'pause' : 'play'} size={14} />
-					{isPlaying ? m.pause() : m.play()}
-				</button>
-				<button
-					type="button"
-					class="border-edge flex items-center rounded-r-md border-l py-1 pr-1 pl-0.5 transition-colors
-						{playMenuOpen ? 'bg-accent-soft text-accent' : 'text-faint hover:bg-edge-soft hover:text-body'}"
-					title={m.playback_options()}
-					aria-label={m.playback_options()}
-					aria-expanded={playMenuOpen}
-					onclick={() => (playMenuOpen = !playMenuOpen)}
-				>
-					<Icon name="chevron-down" size={12} />
-				</button>
+					<button
+						type="button"
+						class="flex items-center gap-1 rounded-l-[5px] px-2 py-1 text-xs font-medium transition-colors
+							{isPlaying ? 'bg-accent-soft text-accent' : 'text-faint hover:bg-edge-soft hover:text-body'}"
+						onclick={() => player.toggle(surah, verse.n)}
+					>
+						<Icon name={isPlaying ? 'pause' : 'play'} size={14} />
+						{isPlaying ? m.pause() : m.play()}
+					</button>
+					<button
+						type="button"
+						class="flex items-center self-stretch rounded-r-[5px] border-l pr-1 pl-0.5 transition-colors
+							{isPlaying || playMenuOpen ? 'border-accent/50' : 'border-edge'}
+							{playMenuOpen ? 'bg-accent-soft text-accent' : 'text-faint hover:bg-edge-soft hover:text-body'}"
+						title={m.playback_options()}
+						aria-label={m.playback_options()}
+						aria-expanded={playMenuOpen}
+						onclick={() => (playMenuOpen = !playMenuOpen)}
+					>
+						<Icon name="chevron-down" size={12} />
+					</button>
+				</div>
 				{#if playMenuOpen}
 					<button
 						type="button"
