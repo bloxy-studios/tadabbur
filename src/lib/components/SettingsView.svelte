@@ -21,6 +21,7 @@
 		{ keys: ['Ctrl/⌘', 'B'], label: m.sc_toggle_sidebar },
 		{ keys: ['Ctrl/⌘', 'F'], label: m.sc_search },
 		{ keys: ['J', 'K'], label: m.sc_verse_nav },
+		{ keys: ['[', ']'], label: m.sc_surah_nav },
 		{ keys: ['P'], label: m.sc_play },
 		{ keys: ['T'], label: m.sc_tafsir },
 		{ keys: ['C'], label: m.sc_copy },

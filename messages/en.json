@@ -40,6 +40,7 @@
 	"sc_toggle_sidebar": "Toggle sidebar",
 	"sc_search": "Search verses",
 	"sc_verse_nav": "Next / previous verse",
+	"sc_surah_nav": "Previous / next surah",
 	"sc_play": "Play or pause focused verse",
 	"sc_tafsir": "Toggle tafsir on focused verse",
 	"sc_copy": "Copy focused verse link",

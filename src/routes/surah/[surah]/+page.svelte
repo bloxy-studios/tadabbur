@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
-	import { afterNavigate } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { dur } from '$lib/motion';
 	import { app } from '$lib/app-state.svelte';
@@ -162,6 +162,19 @@
 		event.preventDefault();
 	}
 
+	// [ and ] jump to the previous / next surah from anywhere on the page.
+	function onWindowKeydown(event: KeyboardEvent) {
+		if (event.metaKey || event.ctrlKey || event.altKey) return;
+		if ((event.target as HTMLElement).closest?.('input, textarea, [role="menu"]')) return;
+		if (event.key === ']' && next) {
+			event.preventDefault();
+			void goto(resolve('/surah/[surah]', { surah: String(next.number) }));
+		} else if (event.key === '[' && prev) {
+			event.preventDefault();
+			void goto(resolve('/surah/[surah]', { surah: String(prev.number) }));
+		}
+	}
+
 	function toggleFocus() {
 		app.prefs.focusMode = !app.prefs.focusMode;
 		app.persistPrefs();
@@ -171,6 +184,8 @@
 <svelte:head>
 	<title>{chapter.nameSimple} · Tadabbur</title>
 </svelte:head>
+
+<svelte:window onkeydown={onWindowKeydown} />
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <main
