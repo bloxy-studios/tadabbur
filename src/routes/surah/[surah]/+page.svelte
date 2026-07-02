@@ -216,11 +216,13 @@
 		{/if}
 
 		{#if surahData}
-			<div in:fade={{ duration: dur(150) }}>
-				{#each surahData.verses as verse (verse.key)}
-					<VerseCard surah={surahData.surah} {verse} eager={verse.n <= EAGER_COUNT} />
-				{/each}
-			</div>
+			{#key surahData.surah}
+				<div in:fade={{ duration: dur(150) }}>
+					{#each surahData.verses as verse (verse.key)}
+						<VerseCard surah={surahData.surah} {verse} eager={verse.n <= EAGER_COUNT} />
+					{/each}
+				</div>
+			{/key}
 		{:else}
 			{#each skeletonRows as i (i)}
 				<div class="border-edge-soft animate-pulse border-b py-6">

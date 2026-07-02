@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { slide } from 'svelte/transition';
 	import { getTafsir } from '$lib/quran/data';
+	import { dur } from '$lib/motion';
 	import type { TafsirEntry, TafsirSlug } from '$lib/quran/types';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
@@ -50,29 +52,38 @@
 	{/each}
 {/snippet}
 
-{#snippet body()}
+{#snippet body(large: boolean)}
 	{#await entry}
 		<p class="text-faint py-2 text-sm">{m.tafsir_loading()}</p>
 	{:then found}
-		{#if !found}
-			<p class="text-faint py-2 text-sm">{m.tafsir_none()}</p>
-		{:else}
-			{#if found.from !== found.to}
-				<p class="text-faint mb-2 text-xs font-medium">
-					{m.tafsir_covers({ from: found.from, to: found.to })}
-				</p>
-			{/if}
-			{#if selected.html}
-				<div
-					class="prose prose-sm prose-stone dark:prose-invert max-w-none [&_h1]:text-base [&_h2]:text-sm"
-				>
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted static tafsir content built by our own data script -->
-					{@html found.text}
-				</div>
+		<!-- Slide the loaded content open so the height change never snaps. -->
+		<div in:slide={{ duration: dur(180) }}>
+			{#if !found}
+				<p class="text-faint py-2 text-sm">{m.tafsir_none()}</p>
 			{:else}
-				<p class="text-body text-sm leading-relaxed whitespace-pre-line">{found.text}</p>
+				{#if found.from !== found.to}
+					<p class="text-faint mb-2 text-xs font-medium">
+						{m.tafsir_covers({ from: found.from, to: found.to })}
+					</p>
+				{/if}
+				{#if selected.html}
+					<div
+						class="prose prose-stone dark:prose-invert max-w-none {large
+							? 'prose-base [&_h1]:text-lg [&_h2]:text-base'
+							: 'prose-sm [&_h1]:text-base [&_h2]:text-sm'}"
+					>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted static tafsir content built by our own data script -->
+						{@html found.text}
+					</div>
+				{:else}
+					<p
+						class="text-body leading-relaxed whitespace-pre-line {large ? 'text-base' : 'text-sm'}"
+					>
+						{found.text}
+					</p>
+				{/if}
 			{/if}
-		{/if}
+		</div>
 	{:catch}
 		<p class="py-2 text-sm text-red-500">{m.tafsir_error()}</p>
 	{/await}
@@ -98,7 +109,7 @@
 	</div>
 
 	<div class="max-h-96 overflow-y-auto px-4 py-3">
-		{@render body()}
+		{@render body(false)}
 	</div>
 </div>
 
@@ -132,7 +143,7 @@
 			</button>
 		</div>
 		<div class="overflow-y-auto px-6 py-5">
-			{@render body()}
+			{@render body(true)}
 		</div>
 	</div>
 </dialog>
