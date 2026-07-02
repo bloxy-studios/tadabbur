@@ -43,40 +43,9 @@
 		};
 	});
 
-	// Long surahs are heavy to mount in one go (Al-Baqarah ≈ 15k word spans),
-	// so render an instant first chunk and grow in idle-time batches.
-	const INITIAL_CHUNK = 24;
-	const GROW_CHUNK = 48;
-	let renderCount = $state(INITIAL_CHUNK);
-	const visibleVerses = $derived(surahData ? surahData.verses.slice(0, renderCount) : []);
-
-	$effect.pre(() => {
-		if (!surahData) return;
-		const total = surahData.verses.length;
-		// Deep links to a late verse render everything up front instead.
-		const hashVerse = Number(location.hash.match(/^#v(\d+)$/)?.[1] ?? 0);
-		// Track the count locally — reading renderCount here would make it a
-		// dependency of this effect, so every grown chunk would re-run it and
-		// reset the list back to the first chunk.
-		let count = hashVerse > INITIAL_CHUNK ? total : Math.min(INITIAL_CHUNK, total);
-		renderCount = count;
-		if (count >= total) return;
-		let cancelled = false;
-		const schedule = (fn: () => void) =>
-			'requestIdleCallback' in window
-				? requestIdleCallback(fn, { timeout: 200 })
-				: setTimeout(fn, 40);
-		const grow = () => {
-			if (cancelled) return;
-			count = Math.min(count + GROW_CHUNK, total);
-			renderCount = count;
-			if (count < total) schedule(grow);
-		};
-		schedule(grow);
-		return () => {
-			cancelled = true;
-		};
-	});
+	// Verse cards mount lazily near the viewport (see lazy-cards.ts); only
+	// the first few render eagerly for SSR and instant first paint.
+	const EAGER_COUNT = 12;
 
 	let main: HTMLElement;
 
@@ -97,11 +66,10 @@
 		if (target) target.scrollIntoView();
 	});
 
-	// Track the topmost visible verse as progress; re-observe as chunks land.
+	// Track the topmost visible verse as progress.
 	$effect(() => {
 		if (!surahData) return;
 		const surah = surahData.surah;
-		void renderCount;
 
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- observer bookkeeping only, never rendered
 		const visible = new Set<number>();
@@ -246,15 +214,9 @@
 		{/if}
 
 		{#if surahData}
-			{#each visibleVerses as verse (verse.key)}
-				<VerseCard surah={surahData.surah} {verse} />
+			{#each surahData.verses as verse (verse.key)}
+				<VerseCard surah={surahData.surah} {verse} eager={verse.n <= EAGER_COUNT} />
 			{/each}
-			{#if renderCount < surahData.verses.length}
-				<div class="border-edge-soft animate-pulse border-b py-6" aria-hidden="true">
-					<div class="bg-edge-soft h-10 w-full rounded-lg"></div>
-					<div class="bg-edge-soft mt-4 h-4 w-3/5 rounded"></div>
-				</div>
-			{/if}
 		{:else}
 			{#each skeletonRows as i (i)}
 				<div class="border-edge-soft animate-pulse border-b py-6">
