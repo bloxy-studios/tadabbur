@@ -43,6 +43,36 @@
 		};
 	});
 
+	// Long surahs are heavy to mount in one go (Al-Baqarah ≈ 15k word spans),
+	// so render an instant first chunk and grow in idle-time batches.
+	const INITIAL_CHUNK = 24;
+	const GROW_CHUNK = 48;
+	let renderCount = $state(INITIAL_CHUNK);
+	const visibleVerses = $derived(surahData ? surahData.verses.slice(0, renderCount) : []);
+
+	$effect.pre(() => {
+		if (!surahData) return;
+		const total = surahData.verses.length;
+		// Deep links to a late verse render everything up front instead.
+		const hashVerse = Number(location.hash.match(/^#v(\d+)$/)?.[1] ?? 0);
+		renderCount = hashVerse > INITIAL_CHUNK ? total : Math.min(INITIAL_CHUNK, total);
+		if (renderCount >= total) return;
+		let cancelled = false;
+		const schedule = (fn: () => void) =>
+			'requestIdleCallback' in window
+				? requestIdleCallback(fn, { timeout: 200 })
+				: setTimeout(fn, 40);
+		const grow = () => {
+			if (cancelled) return;
+			renderCount = Math.min(renderCount + GROW_CHUNK, total);
+			if (renderCount < total) schedule(grow);
+		};
+		schedule(grow);
+		return () => {
+			cancelled = true;
+		};
+	});
+
 	let main: HTMLElement;
 
 	// The reader scrolls inside <main>, not the window, so handle scroll
@@ -54,15 +84,19 @@
 		else main.scrollTop = 0;
 	});
 
-	// Once verses are in the DOM: honor a hash anchor that couldn't resolve
-	// during the skeleton, and track the topmost visible verse as progress.
+	// Honor a hash anchor once the verses exist (skeleton can't resolve it).
 	$effect(() => {
 		if (!surahData) return;
-		const surah = surahData.surah;
-
 		const hash = location.hash.slice(1);
 		const target = hash ? document.getElementById(hash) : null;
 		if (target) target.scrollIntoView();
+	});
+
+	// Track the topmost visible verse as progress; re-observe as chunks land.
+	$effect(() => {
+		if (!surahData) return;
+		const surah = surahData.surah;
+		void renderCount;
 
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- observer bookkeeping only, never rendered
 		const visible = new Set<number>();
@@ -207,9 +241,15 @@
 		{/if}
 
 		{#if surahData}
-			{#each surahData.verses as verse (verse.key)}
+			{#each visibleVerses as verse (verse.key)}
 				<VerseCard surah={surahData.surah} {verse} />
 			{/each}
+			{#if renderCount < surahData.verses.length}
+				<div class="border-edge-soft animate-pulse border-b py-6" aria-hidden="true">
+					<div class="bg-edge-soft h-10 w-full rounded-lg"></div>
+					<div class="bg-edge-soft mt-4 h-4 w-3/5 rounded"></div>
+				</div>
+			{/if}
 		{:else}
 			{#each skeletonRows as i (i)}
 				<div class="border-edge-soft animate-pulse border-b py-6">

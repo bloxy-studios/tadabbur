@@ -70,8 +70,13 @@ class Player {
 			}
 			const timing = this.#timings?.verses[verse - 1];
 			if (!timing) return;
-			let startMs = timing.from;
-			this.#stopAt = opts?.continuous ? null : timing.to;
+			// QDC verse windows (timestamp_from/to) bleed into neighboring
+			// verses; the word segments are precise, so start at the first
+			// word and stop after the last one.
+			const firstSeg = timing.segments[0];
+			const lastSeg = timing.segments[timing.segments.length - 1];
+			let startMs = firstSeg ? firstSeg[1] : timing.from;
+			this.#stopAt = opts?.continuous ? null : lastSeg ? lastSeg[2] : timing.to;
 			this.rangeActive = false;
 			if (opts?.words) {
 				const segments = timing.segments.filter(
