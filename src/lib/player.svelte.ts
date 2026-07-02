@@ -19,6 +19,7 @@ class Player {
 	#loadedKey = '';
 	#stopAt: number | null = null;
 	#raf = 0;
+	#playToken = 0;
 
 	#ensure(): HTMLAudioElement {
 		if (!this.#audio) {
@@ -61,12 +62,22 @@ class Player {
 	) {
 		if (!browser) return;
 		const audio = this.#ensure();
+		// Stop whatever is sounding right away — otherwise the old position
+		// keeps playing audibly until the seek below completes.
+		audio.pause();
+		const token = ++this.#playToken;
 		try {
 			const key = `${app.prefs.reciter}:${surah}`;
 			if (this.#loadedKey !== key) {
 				this.#timings = await getTimings(app.prefs.reciter, surah);
+				if (token !== this.#playToken) return;
 				audio.src = this.#timings.audioUrl;
 				this.#loadedKey = key;
+				await new Promise<void>((resolve) => {
+					if (audio.readyState >= 1) resolve();
+					else audio.addEventListener('loadedmetadata', () => resolve(), { once: true });
+				});
+				if (token !== this.#playToken) return;
 			}
 			const timing = this.#timings?.verses[verse - 1];
 			if (!timing) return;
@@ -90,10 +101,19 @@ class Player {
 			}
 			this.current = { surah, verse };
 			audio.currentTime = startMs / 1000;
+			// Only start output once the seek has actually landed.
+			if (audio.seeking) {
+				await new Promise<void>((resolve) =>
+					audio.addEventListener('seeked', () => resolve(), { once: true })
+				);
+				if (token !== this.#playToken) return;
+			}
 			await audio.play();
 		} catch {
-			this.current = null;
-			this.#loadedKey = '';
+			if (token === this.#playToken) {
+				this.current = null;
+				this.#loadedKey = '';
+			}
 		}
 	}
 
