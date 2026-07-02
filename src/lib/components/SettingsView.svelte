@@ -57,7 +57,7 @@
 			class="bg-surface text-body focus:border-accent focus:ring-accent w-full rounded-lg border-edge text-sm"
 		>
 			{#each reciters as reciter (reciter.id)}
-				<option value={reciter.id}>{reciter.name}</option>
+				<option value={reciter.id}>{reciter.name} — {reciter.style}</option>
 			{/each}
 		</select>
 	</section>

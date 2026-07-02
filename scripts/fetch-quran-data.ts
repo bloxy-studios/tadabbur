@@ -125,6 +125,13 @@ console.log(`✓ chapters.json (${chapters.length} surahs)`);
 
 // --- 3. Verses per surah -----------------------------------------------------
 
+interface ApiWord {
+	position: number;
+	char_type_name: string;
+	text_uthmani: string;
+	translation: { text: string };
+}
+
 interface ApiVerse {
 	verse_number: number;
 	verse_key: string;
@@ -132,21 +139,36 @@ interface ApiVerse {
 	page_number: number;
 	juz_number: number;
 	translations: { resource_id: number; text: string }[];
+	words: ApiWord[];
 }
 
-let verseTotal = 0;
-
-await pool(chapters, 6, async (chapter) => {
+async function fetchVerses(surah: number, language: string, withTranslations: boolean) {
 	const verses: ApiVerse[] = [];
+	const translations = withTranslations
+		? `&translations=${enTranslation.id},${idTranslation.id}`
+		: '';
 	let page = 1;
 	while (true) {
 		const data = await getJson<{ verses: ApiVerse[]; pagination: { next_page: number | null } }>(
-			`${QURAN_API}/verses/by_chapter/${chapter.number}?fields=text_uthmani&translations=${enTranslation.id},${idTranslation.id}&per_page=50&page=${page}`
+			`${QURAN_API}/verses/by_chapter/${surah}?fields=text_uthmani&words=true&word_fields=text_uthmani&language=${language}${translations}&per_page=50&page=${page}`
 		);
 		verses.push(...data.verses);
 		if (!data.pagination.next_page) break;
 		page = data.pagination.next_page;
 	}
+	return verses;
+}
+
+let verseTotal = 0;
+
+await pool(chapters, 6, async (chapter) => {
+	// Word-by-word translations come one language per request, so fetch twice
+	// and merge by word position. Segment timestamps (audio) index the same
+	// positions, minus the trailing ayah-number marker (char_type "end").
+	const [verses, versesId] = await Promise.all([
+		fetchVerses(chapter.number, 'en', true),
+		fetchVerses(chapter.number, 'id', false)
+	]);
 	if (verses.length !== chapter.versesCount) {
 		throw new Error(
 			`Surah ${chapter.number}: expected ${chapter.versesCount} verses, got ${verses.length}`
@@ -155,19 +177,31 @@ await pool(chapters, 6, async (chapter) => {
 	verseTotal += verses.length;
 	await write(`quran/${chapter.number}.json`, {
 		surah: chapter.number,
-		verses: verses.map((v) => ({
-			n: v.verse_number,
-			key: v.verse_key,
-			arabic: v.text_uthmani,
-			page: v.page_number,
-			juz: v.juz_number,
-			en: cleanTranslation(
-				v.translations.find((t) => t.resource_id === enTranslation.id)?.text ?? ''
-			),
-			id: cleanTranslation(
-				v.translations.find((t) => t.resource_id === idTranslation.id)?.text ?? ''
-			)
-		}))
+		verses: verses.map((v, vi) => {
+			const wordsEn = v.words.filter((w) => w.char_type_name === 'word');
+			const wordsId = versesId[vi].words.filter((w) => w.char_type_name === 'word');
+			if (wordsEn.length !== wordsId.length) {
+				throw new Error(`Word count mismatch at ${v.verse_key}`);
+			}
+			return {
+				n: v.verse_number,
+				key: v.verse_key,
+				arabic: v.text_uthmani,
+				page: v.page_number,
+				juz: v.juz_number,
+				en: cleanTranslation(
+					v.translations.find((t) => t.resource_id === enTranslation.id)?.text ?? ''
+				),
+				id: cleanTranslation(
+					v.translations.find((t) => t.resource_id === idTranslation.id)?.text ?? ''
+				),
+				words: wordsEn.map((w, wi) => ({
+					a: w.text_uthmani,
+					en: w.translation.text ?? '',
+					id: wordsId[wi].translation.text ?? ''
+				}))
+			};
+		})
 	});
 	console.log(`  surah ${chapter.number} (${verses.length} verses)`);
 });

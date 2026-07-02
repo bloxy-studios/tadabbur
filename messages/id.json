@@ -32,6 +32,7 @@
 	"tafsir_error": "Gagal memuat tafsir. Periksa koneksimu.",
 	"tafsir_covers": "Mencakup ayat {from}–{to}",
 	"play": "Putar",
+	"play_selection": "Putar pilihan",
 	"pause": "Jeda",
 	"record": "Rekam",
 	"coming_soon": "Segera hadir",

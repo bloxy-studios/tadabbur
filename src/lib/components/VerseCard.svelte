@@ -13,9 +13,9 @@
 	let copied = $state(false);
 	let recordNote = $state(false);
 
-	const isPlaying = $derived(
-		player.playing && player.current?.surah === surah && player.current.verse === verse.n
-	);
+	const isCurrent = $derived(player.current?.surah === surah && player.current.verse === verse.n);
+	const isPlaying = $derived(player.playing && isCurrent);
+	const activeWord = $derived(isPlaying ? player.currentWord : null);
 
 	async function copyLink() {
 		const url = `${location.origin}/surah/${surah}#v${verse.n}`;
@@ -42,9 +42,15 @@
 		class="font-arabic text-ink leading-loose"
 		style="font-size: {app.prefs.arabicSize}rem"
 	>
-		{verse.arabic}
-		<span class="text-accent mx-1 inline-block" style="font-size: {app.prefs.arabicSize * 0.6}rem"
-			>﴿{verse.n}﴾</span
+		{#each verse.words as word, i (i)}<span
+				data-word={i + 1}
+				class="rounded-sm transition-colors duration-100 {activeWord === i + 1
+					? 'bg-accent-soft text-accent'
+					: ''}">{word.a}</span
+			>
+		{/each}<span
+			class="text-accent mx-1 inline-block"
+			style="font-size: {app.prefs.arabicSize * 0.6}rem">﴿{verse.n}﴾</span
 		>
 	</p>
 

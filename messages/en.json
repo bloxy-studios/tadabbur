@@ -32,6 +32,7 @@
 	"tafsir_error": "Could not load tafsir. Check your connection.",
 	"tafsir_covers": "Covers verses {from}–{to}",
 	"play": "Play",
+	"play_selection": "Play selection",
 	"pause": "Pause",
 	"record": "Record",
 	"coming_soon": "Coming soon",

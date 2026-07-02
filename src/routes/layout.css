@@ -70,3 +70,10 @@ body {
 .verse-anchor {
 	scroll-margin-top: 1.5rem;
 }
+
+/* Blocking Arabic text is a feature (word popover) — tint it to match. */
+[lang='ar']::selection,
+[lang='ar'] *::selection {
+	background-color: var(--accent-soft);
+	color: var(--accent);
+}

@@ -11,6 +11,12 @@ export interface Chapter {
 	pages: [number, number];
 }
 
+export interface Word {
+	a: string;
+	en: string;
+	id: string;
+}
+
 export interface Verse {
 	n: number;
 	key: string;
@@ -19,6 +25,7 @@ export interface Verse {
 	juz: number;
 	en: string;
 	id: string;
+	words: Word[];
 }
 
 export interface SurahData {

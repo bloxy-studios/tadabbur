@@ -36,7 +36,7 @@ const defaults: Prefs = {
 	focusMode: false,
 	sidebarOpen: true,
 	infoOpen: true,
-	reciter: 'alafasy'
+	reciter: 7
 };
 
 function loadJson<T>(key: string, fallback: T): T {
@@ -49,9 +49,16 @@ function loadJson<T>(key: string, fallback: T): T {
 	}
 }
 
+function loadPrefs(): Prefs {
+	const prefs = loadJson(STORAGE_KEY, defaults);
+	// Reciter ids moved from everyayah slugs (strings) to QDC ids (numbers).
+	if (typeof prefs.reciter !== 'number') prefs.reciter = defaults.reciter;
+	return prefs;
+}
+
 class AppState {
 	view: SidebarView = $state('surahs');
-	prefs: Prefs = $state(loadJson(STORAGE_KEY, defaults));
+	prefs: Prefs = $state(loadPrefs());
 	lastRead: LastRead | null = $state(loadJson<LastRead | null>(LAST_READ_KEY, null));
 	/** Mobile drawer visibility — session-only, never persisted. */
 	mobileSidebarOpen = $state(false);

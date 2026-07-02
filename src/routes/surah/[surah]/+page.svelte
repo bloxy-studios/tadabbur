@@ -2,11 +2,13 @@
 	import { afterNavigate } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { app } from '$lib/app-state.svelte';
+	import { player } from '$lib/player.svelte';
 	import { chapterName } from '$lib/quran/locale';
-	import type { SurahData } from '$lib/quran/types';
+	import type { SurahData, Verse } from '$lib/quran/types';
 	import { m } from '$lib/paraglide/messages';
 	import Icon from '$lib/components/Icon.svelte';
 	import InfoPane from '$lib/components/InfoPane.svelte';
+	import SelectionPopover from '$lib/components/SelectionPopover.svelte';
 	import VerseCard from '$lib/components/VerseCard.svelte';
 	import type { PageProps } from './$types';
 
@@ -79,6 +81,54 @@
 		return () => observer.disconnect();
 	});
 
+	// Keep the verse being recited in view during follow-along playback.
+	$effect(() => {
+		if (!player.playing || player.current?.surah !== data.surah) return;
+		document
+			.getElementById(`v${player.current.verse}`)
+			?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+	});
+
+	// Selecting (blocking) Arabic words opens a word-by-word popover.
+	let selection = $state<{ verse: Verse; from: number; to: number; x: number; y: number } | null>(
+		null
+	);
+
+	function onPointerUp(event: PointerEvent) {
+		if ((event.target as Element).closest?.('[data-selection-popover]')) return;
+		requestAnimationFrame(() => {
+			const sel = document.getSelection();
+			if (!sel || sel.isCollapsed || !surahData) {
+				selection = null;
+				return;
+			}
+			const range = sel.getRangeAt(0);
+			const node = range.commonAncestorContainer;
+			const el = node instanceof Element ? node : node.parentElement;
+			const article = el?.closest<HTMLElement>('[data-verse]');
+			if (!article) {
+				selection = null;
+				return;
+			}
+			const spans = [...article.querySelectorAll<HTMLElement>('[data-word]')].filter((span) =>
+				range.intersectsNode(span)
+			);
+			if (!spans.length) {
+				selection = null;
+				return;
+			}
+			const verse = surahData.verses[Number(article.dataset.verse) - 1];
+			const rect = range.getBoundingClientRect();
+			selection = {
+				verse,
+				from: Number(spans[0].dataset.word),
+				to: Number(spans[spans.length - 1].dataset.word),
+				x: rect.left + rect.width / 2,
+				y: rect.top
+			};
+		});
+	}
+
 	function toggleFocus() {
 		app.prefs.focusMode = !app.prefs.focusMode;
 		app.persistPrefs();
@@ -89,7 +139,12 @@
 	<title>{chapter.nameSimple} · Tadabbur</title>
 </svelte:head>
 
-<main bind:this={main} class="min-w-0 grow overflow-y-auto">
+<main
+	bind:this={main}
+	class="min-w-0 grow overflow-y-auto"
+	onpointerup={onPointerUp}
+	onscroll={() => (selection = null)}
+>
 	<div class="mx-auto max-w-3xl px-4 pb-24 sm:px-6 lg:px-10">
 		<header class="flex items-start justify-between gap-4 pt-8 pb-6 sm:pt-10">
 			<div class="min-w-0">
@@ -182,6 +237,12 @@
 		</nav>
 	</div>
 </main>
+
+{#if selection}
+	<div data-selection-popover>
+		<SelectionPopover surah={data.surah} {...selection} />
+	</div>
+{/if}
 
 {#if surahData && app.prefs.infoOpen && !app.prefs.focusMode}
 	<InfoPane {chapter} {surahData} />
