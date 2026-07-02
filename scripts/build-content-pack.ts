@@ -15,7 +15,8 @@ const packs = [
 	{ name: 'quran', dir: 'static/quran', prefix: '/quran/' },
 	{ name: 'ibn-kathir', dir: 'static/tafsir/ibn-kathir', prefix: '/tafsir/ibn-kathir/' },
 	{ name: 'kemenag', dir: 'static/tafsir/kemenag', prefix: '/tafsir/kemenag/' },
-	{ name: 'mukhtasar', dir: 'static/tafsir/mukhtasar', prefix: '/tafsir/mukhtasar/' }
+	{ name: 'mukhtasar', dir: 'static/tafsir/mukhtasar', prefix: '/tafsir/mukhtasar/' },
+	{ name: 'as-saadi', dir: 'static/tafsir/as-saadi', prefix: '/tafsir/as-saadi/' }
 ];
 
 await rm(join(root, 'static/pack'), { recursive: true, force: true });

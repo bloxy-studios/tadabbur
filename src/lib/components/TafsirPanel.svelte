@@ -16,14 +16,15 @@
 		html: boolean;
 	}
 
-	// English readers get Ibn Kathir; Indonesian readers get Tafsir Kemenag and
-	// Al-Mukhtasar, plus Ibn Kathir (in English) as an extra source — no
-	// properly-licensed Indonesian Ibn Kathir exists.
+	// English readers get Ibn Kathir; Indonesian readers get Tafsir Kemenag,
+	// Al-Mukhtasar, and As-Sa'di, plus Ibn Kathir (in English) as an extra
+	// source — no properly-licensed Indonesian Ibn Kathir exists.
 	const sources: Source[] =
 		getLocale() === 'id'
 			? [
 					{ slug: 'kemenag', label: 'Tafsir Kemenag', html: false },
 					{ slug: 'mukhtasar', label: 'Al-Mukhtasar', html: false },
+					{ slug: 'as-saadi', label: "As-Sa'di", html: false },
 					{ slug: 'ibn-kathir', label: 'Ibn Kathir (EN)', html: true }
 				]
 			: [{ slug: 'ibn-kathir', label: 'Ibn Kathir', html: true }];
