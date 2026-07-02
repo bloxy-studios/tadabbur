@@ -79,10 +79,10 @@ html {
 	border-radius: 4px;
 }
 
-/* Focused verses get a soft translucent wash instead of an outlined box. */
+/* Focused verses get a barely-there neutral wash instead of an outlined box. */
 article[data-verse]:focus-visible {
 	outline: none;
-	background-color: color-mix(in srgb, var(--accent) 7%, transparent);
+	background-color: color-mix(in srgb, var(--ink) 4%, transparent);
 	border-radius: 12px;
 	padding-inline: 0.75rem;
 	margin-inline: -0.75rem;
