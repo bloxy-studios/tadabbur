@@ -18,6 +18,7 @@
 </script>
 
 <nav
+	data-pane
 	class="bg-paper z-40 flex w-12 shrink-0 flex-col items-center gap-1 border-r border-edge py-3"
 	aria-label="Primary"
 >

@@ -25,6 +25,7 @@
 		{ keys: ['P'], label: m.sc_play },
 		{ keys: ['T'], label: m.sc_tafsir },
 		{ keys: ['C'], label: m.sc_copy },
+		{ keys: ['F6'], label: m.sc_panes },
 		{ keys: ['Esc'], label: m.sc_close }
 	];
 </script>

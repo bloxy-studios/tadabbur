@@ -19,7 +19,7 @@
 	} as const;
 </script>
 
-<aside class="bg-paper flex h-full w-72 shrink-0 flex-col border-r border-edge">
+<aside data-pane class="bg-paper flex h-full w-72 shrink-0 flex-col border-r border-edge">
 	<h2 class="text-faint px-4 pt-4 pb-2 text-xs font-semibold tracking-widest uppercase">
 		{titles[app.view]()}
 	</h2>

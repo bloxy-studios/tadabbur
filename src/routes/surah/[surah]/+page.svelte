@@ -191,6 +191,7 @@
 <main
 	bind:this={main}
 	id="main-content"
+	data-pane
 	tabindex="-1"
 	class="min-w-0 grow overflow-y-auto focus:outline-none"
 	onpointerup={onPointerUp}

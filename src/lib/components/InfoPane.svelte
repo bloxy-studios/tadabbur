@@ -29,7 +29,10 @@
 	]);
 </script>
 
-<aside class="bg-paper hidden w-72 shrink-0 flex-col overflow-y-auto border-l border-edge xl:flex">
+<aside
+	data-pane
+	class="bg-paper hidden w-72 shrink-0 flex-col overflow-y-auto border-l border-edge xl:flex"
+>
 	<div class="flex items-center justify-between px-4 pt-4 pb-2">
 		<h2 class="text-faint text-xs font-semibold tracking-widest uppercase">{m.info()}</h2>
 		<button
