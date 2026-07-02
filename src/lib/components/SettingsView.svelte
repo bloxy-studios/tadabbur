@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { app, arabicFontStacks, type ArabicFont, type Theme } from '$lib/app-state.svelte';
+	import { reciters } from '$lib/quran/audio';
 	import { m } from '$lib/paraglide/messages';
 	import { getLocale, setLocale, type Locale } from '$lib/paraglide/runtime';
 	import Segmented from './Segmented.svelte';
@@ -44,6 +45,21 @@
 			value={app.prefs.theme}
 			onselect={(value) => setPref('theme', value as Theme)}
 		/>
+	</section>
+
+	<section>
+		<h3 class="text-faint mb-2 text-xs font-semibold tracking-wide uppercase">
+			{m.settings_reciter()}
+		</h3>
+		<select
+			bind:value={app.prefs.reciter}
+			onchange={() => app.persistPrefs()}
+			class="bg-surface text-body focus:border-accent focus:ring-accent w-full rounded-lg border-edge text-sm"
+		>
+			{#each reciters as reciter (reciter.id)}
+				<option value={reciter.id}>{reciter.name}</option>
+			{/each}
+		</select>
 	</section>
 
 	<section>

@@ -1,0 +1,5 @@
+/quran/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/tafsir/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800

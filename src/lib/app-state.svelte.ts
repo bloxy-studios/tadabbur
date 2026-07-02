@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import type { ReciterId } from './quran/audio';
 
 export type SidebarView = 'surahs' | 'search' | 'notes' | 'settings';
 export type Theme = 'light' | 'dark' | 'system';
@@ -25,6 +26,7 @@ interface Prefs {
 	focusMode: boolean;
 	sidebarOpen: boolean;
 	infoOpen: boolean;
+	reciter: ReciterId;
 }
 
 const defaults: Prefs = {
@@ -33,7 +35,8 @@ const defaults: Prefs = {
 	arabicSize: 2,
 	focusMode: false,
 	sidebarOpen: true,
-	infoOpen: true
+	infoOpen: true,
+	reciter: 'alafasy'
 };
 
 function loadJson<T>(key: string, fallback: T): T {

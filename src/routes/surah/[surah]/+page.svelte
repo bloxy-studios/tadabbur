@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { app } from '$lib/app-state.svelte';
 	import { chapterName } from '$lib/quran/locale';
+	import type { SurahData } from '$lib/quran/types';
 	import { m } from '$lib/paraglide/messages';
 	import Icon from '$lib/components/Icon.svelte';
 	import InfoPane from '$lib/components/InfoPane.svelte';
@@ -11,9 +12,34 @@
 
 	let { data }: PageProps = $props();
 
-	const chapter = $derived(data.chapters[data.surahData.surah - 1]);
+	const chapter = $derived(data.chapters[data.surah - 1]);
 	const prev = $derived(chapter.number > 1 ? data.chapters[chapter.number - 2] : null);
 	const next = $derived(chapter.number < 114 ? data.chapters[chapter.number] : null);
+
+	const skeletonRows = Array.from({ length: 6 }, (_, i) => i);
+
+	// On the server the load awaited the data; on client navigation it hands
+	// us a promise so the page renders immediately with skeleton verses.
+	let resolved = $state<SurahData | null>(null);
+	const surahData = $derived(
+		data.surahData instanceof Promise
+			? resolved?.surah === data.surah
+				? resolved
+				: null
+			: data.surahData
+	);
+
+	$effect(() => {
+		const incoming = data.surahData;
+		if (!(incoming instanceof Promise)) return;
+		let cancelled = false;
+		incoming.then((surah) => {
+			if (!cancelled) resolved = surah;
+		});
+		return () => {
+			cancelled = true;
+		};
+	});
 
 	let main: HTMLElement;
 
@@ -26,9 +52,16 @@
 		else main.scrollTop = 0;
 	});
 
-	// Track the topmost visible verse as reading progress.
+	// Once verses are in the DOM: honor a hash anchor that couldn't resolve
+	// during the skeleton, and track the topmost visible verse as progress.
 	$effect(() => {
-		const surah = data.surahData.surah;
+		if (!surahData) return;
+		const surah = surahData.surah;
+
+		const hash = location.hash.slice(1);
+		const target = hash ? document.getElementById(hash) : null;
+		if (target) target.scrollIntoView();
+
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- observer bookkeeping only, never rendered
 		const visible = new Set<number>();
 		const observer = new IntersectionObserver(
@@ -111,9 +144,19 @@
 			</p>
 		{/if}
 
-		{#each data.surahData.verses as verse (verse.key)}
-			<VerseCard surah={data.surahData.surah} {verse} />
-		{/each}
+		{#if surahData}
+			{#each surahData.verses as verse (verse.key)}
+				<VerseCard surah={surahData.surah} {verse} />
+			{/each}
+		{:else}
+			{#each skeletonRows as i (i)}
+				<div class="border-edge-soft animate-pulse border-b py-6">
+					<div class="bg-edge-soft h-10 w-full rounded-lg"></div>
+					<div class="bg-edge-soft mt-4 h-4 w-4/5 rounded"></div>
+					<div class="bg-edge-soft mt-2 h-4 w-3/5 rounded"></div>
+				</div>
+			{/each}
+		{/if}
 
 		<nav class="mt-10 flex items-center justify-between gap-4">
 			{#if prev}
@@ -140,6 +183,6 @@
 	</div>
 </main>
 
-{#if app.prefs.infoOpen && !app.prefs.focusMode}
-	<InfoPane {chapter} surahData={data.surahData} />
+{#if surahData && app.prefs.infoOpen && !app.prefs.focusMode}
+	<InfoPane {chapter} {surahData} />
 {/if}
