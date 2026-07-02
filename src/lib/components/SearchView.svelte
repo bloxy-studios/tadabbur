@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Chapter, SurahData, Verse } from '$lib/quran/types';
+	import { app } from '$lib/app-state.svelte';
 	import { getSurah } from '$lib/quran/data';
 	import { verseTranslation } from '$lib/quran/locale';
 	import { resolve } from '$app/paths';
@@ -16,6 +17,14 @@
 	let query = $state('');
 	let corpus: SurahData[] | null = $state(null);
 	let loading = $state(false);
+	let input: HTMLInputElement | undefined = $state();
+
+	// Focus on mount and whenever Cmd/Ctrl+F is pressed again.
+	$effect(() => {
+		void app.searchFocusTick;
+		input?.focus();
+		input?.select();
+	});
 
 	async function ensureCorpus() {
 		if (corpus || loading) return;
@@ -51,6 +60,7 @@
 	<div class="px-3 pb-2">
 		<input
 			type="search"
+			bind:this={input}
 			bind:value={query}
 			onfocus={ensureCorpus}
 			placeholder={m.search_placeholder()}

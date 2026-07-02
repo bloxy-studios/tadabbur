@@ -128,6 +128,21 @@ class AppState {
 	closeMobileSidebar() {
 		this.mobileSidebarOpen = false;
 	}
+
+	/** Bumped to tell the search view to grab focus (Cmd/Ctrl+F). */
+	searchFocusTick = $state(0);
+
+	/** Open the search view and focus its input — replaces native find, which
+	 * can't see lazily-mounted verses. */
+	focusSearch() {
+		this.view = 'search';
+		if (browser && window.matchMedia('(max-width: 767px)').matches) this.mobileSidebarOpen = true;
+		else {
+			this.prefs.sidebarOpen = true;
+			this.persistPrefs();
+		}
+		this.searchFocusTick++;
+	}
 }
 
 export const app = new AppState();

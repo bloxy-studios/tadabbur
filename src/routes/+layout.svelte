@@ -11,9 +11,14 @@
 	let { data, children }: LayoutProps = $props();
 
 	function onKeydown(event: KeyboardEvent) {
-		if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
+		if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) return;
+		if (event.key === 'b') {
 			event.preventDefault();
 			app.toggleSidebar();
+		} else if (event.key === 'f') {
+			// Native find can't see lazily-mounted verses — our search can.
+			event.preventDefault();
+			app.focusSearch();
 		}
 	}
 
