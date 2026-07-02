@@ -26,8 +26,17 @@ export function getChapters(fetcher: typeof fetch): Promise<Chapter[]> {
 	return getJson(fetcher, '/quran/chapters.json');
 }
 
+/** Resolved surah values for a synchronous cache-hit path (no skeleton). */
+const surahValues = new Map<number, SurahData>();
+
 export function getSurah(fetcher: typeof fetch, surah: number): Promise<SurahData> {
-	return getJson(fetcher, `/quran/${surah}.json`);
+	const promise = getJson<SurahData>(fetcher, `/quran/${surah}.json`);
+	promise.then((data) => surahValues.set(surah, data)).catch(() => {});
+	return promise;
+}
+
+export function getCachedSurah(surah: number): SurahData | undefined {
+	return surahValues.get(surah);
 }
 
 export function getTafsir(

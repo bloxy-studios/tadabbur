@@ -1,11 +1,16 @@
 import { error } from '@sveltejs/kit';
 import { browser } from '$app/environment';
-import { getSurah, isValidSurah } from '$lib/quran/data';
+import { getCachedSurah, getSurah, isValidSurah } from '$lib/quran/data';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ fetch, params }) => {
 	const surah = Number(params.surah);
 	if (!isValidSurah(surah)) error(404, 'Surah not found');
+
+	// Already in memory (revisit, preload, or background prefetch): hand the
+	// value over synchronously so the reader renders instantly, no skeleton.
+	const cached = getCachedSurah(surah);
+	if (cached) return { surah, surahData: cached };
 
 	const surahData = getSurah(fetch, surah);
 	// Await during SSR so the first HTML ships complete; hand the promise to

@@ -2,6 +2,7 @@
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { afterNavigate } from '$app/navigation';
+	import { getSurah } from '$lib/quran/data';
 	import { app, arabicFontStacks } from '$lib/app-state.svelte';
 	import ActivityBar from '$lib/components/ActivityBar.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
@@ -37,6 +38,31 @@
 			'--arabic-font',
 			arabicFontStacks[app.prefs.arabicFont]
 		);
+	});
+
+	// Local-first: once the app settles, quietly pull every surah into memory
+	// (~8.6MB JSON) during idle time so any surah switch is instant.
+	$effect(() => {
+		// navigator.connection is non-standard, hence the manual typing.
+		const connection = (navigator as { connection?: { saveData?: boolean } }).connection;
+		if (connection?.saveData) return;
+		let cancelled = false;
+		let n = 1;
+		const schedule = (fn: () => void) =>
+			'requestIdleCallback' in window
+				? requestIdleCallback(fn, { timeout: 1000 })
+				: setTimeout(fn, 150);
+		const next = () => {
+			if (cancelled || n > 114) return;
+			getSurah(fetch, n++)
+				.catch(() => {})
+				.finally(() => schedule(next));
+		};
+		const timer = setTimeout(() => next(), 2000);
+		return () => {
+			cancelled = true;
+			clearTimeout(timer);
+		};
 	});
 </script>
 
