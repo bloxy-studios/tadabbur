@@ -45,17 +45,22 @@
 
 	function onKeydown(event: KeyboardEvent) {
 		const noModifiers = !event.metaKey && !event.ctrlKey && !event.altKey;
-		const typing = (event.target as HTMLElement).closest?.('input, textarea');
+		const target = event.target as HTMLElement;
+		const typing = !!target.closest?.('input, textarea');
 
-		// 1–4 jump straight to a pane; F6 / Shift+F6 cycle (a11y standard).
-		if (noModifiers && !typing && event.key >= '1' && event.key <= '4') {
-			const pane = visiblePanes()[Number(event.key) - 1];
+		// 1–4 jump straight to a pane (physical keys, so any layout works).
+		// Bare digits outside inputs; Alt+digit even while typing.
+		const digit = /^Digit([1-4])$/.exec(event.code ?? '')?.[1];
+		const altOnly = event.altKey && !event.metaKey && !event.ctrlKey;
+		if (digit && ((noModifiers && !typing) || altOnly)) {
+			const pane = visiblePanes()[Number(digit) - 1];
 			if (pane) {
 				event.preventDefault();
 				focusPane(pane);
 			}
 			return;
 		}
+		// F6 / Shift+F6 cycle panes (a11y standard).
 		if (event.key === 'F6') {
 			event.preventDefault();
 			const panes = visiblePanes();
@@ -64,8 +69,13 @@
 			focusPane(panes[(current + step + panes.length) % panes.length]);
 			return;
 		}
-		if (event.key === 'Escape' && app.mobileSidebarOpen) {
-			app.closeMobileSidebar();
+		if (event.key === 'Escape') {
+			// First Escape leaves the input, so bare shortcuts work again.
+			if (typing) {
+				target.blur();
+				return;
+			}
+			if (app.mobileSidebarOpen) app.closeMobileSidebar();
 			return;
 		}
 		if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) return;
