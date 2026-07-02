@@ -65,6 +65,13 @@ html {
 	scroll-behavior: smooth;
 }
 
+/* One visible, consistent keyboard focus ring everywhere. */
+:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+	border-radius: 4px;
+}
+
 body {
 	background-color: var(--paper);
 	color: var(--body);

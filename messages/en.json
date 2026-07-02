@@ -1,6 +1,8 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
 	"nav_home": "Home",
+	"skip_to_content": "Skip to content",
+	"verse_aria": "Verse {key}",
 	"nav_surahs": "Surahs",
 	"nav_search": "Search",
 	"nav_notes": "Notes",

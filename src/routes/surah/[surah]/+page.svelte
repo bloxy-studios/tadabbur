@@ -145,6 +145,23 @@
 		});
 	}
 
+	// j/k (or arrows) move keyboard focus between verses.
+	function onMainKeydown(event: KeyboardEvent) {
+		if (event.metaKey || event.ctrlKey || event.altKey) return;
+		if ((event.target as HTMLElement).closest('input, textarea, [role="menu"]')) return;
+		const down = event.key === 'j' || event.key === 'ArrowDown';
+		const up = event.key === 'k' || event.key === 'ArrowUp';
+		if (!down && !up) return;
+		const articles = [...main.querySelectorAll<HTMLElement>('[data-verse]')];
+		if (!articles.length) return;
+		const current = (event.target as HTMLElement).closest<HTMLElement>('[data-verse]');
+		const index = current ? articles.indexOf(current) : -1;
+		const next = articles[down ? Math.min(index + 1, articles.length - 1) : Math.max(index - 1, 0)];
+		next?.focus();
+		next?.scrollIntoView({ block: 'center' });
+		event.preventDefault();
+	}
+
 	function toggleFocus() {
 		app.prefs.focusMode = !app.prefs.focusMode;
 		app.persistPrefs();
@@ -155,11 +172,15 @@
 	<title>{chapter.nameSimple} · Tadabbur</title>
 </svelte:head>
 
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <main
 	bind:this={main}
-	class="min-w-0 grow overflow-y-auto"
+	id="main-content"
+	tabindex="-1"
+	class="min-w-0 grow overflow-y-auto focus:outline-none"
 	onpointerup={onPointerUp}
 	onscroll={() => (selection = null)}
+	onkeydown={onMainKeydown}
 >
 	<div class="mx-auto max-w-3xl px-4 pb-24 sm:px-6 lg:px-10">
 		<header class="flex items-start justify-between gap-4 pt-8 pb-6 sm:pt-10">

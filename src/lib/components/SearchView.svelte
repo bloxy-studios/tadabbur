@@ -18,6 +18,7 @@
 	let corpus: SurahData[] | null = $state(null);
 	let loading = $state(false);
 	let input: HTMLInputElement | undefined = $state();
+	let list: HTMLUListElement | undefined = $state();
 
 	// Focus on mount and whenever Cmd/Ctrl+F is pressed again.
 	$effect(() => {
@@ -63,6 +64,12 @@
 			bind:this={input}
 			bind:value={query}
 			onfocus={ensureCorpus}
+			onkeydown={(event) => {
+				if (event.key !== 'Enter' || !hits.length) return;
+				event.preventDefault();
+				// Navigate via the first result's own link.
+				list?.querySelector('a')?.click();
+			}}
 			placeholder={m.search_placeholder()}
 			class="bg-surface placeholder:text-faint focus:border-accent focus:ring-accent w-full rounded-lg border-edge px-3 py-1.5 text-sm"
 		/>
@@ -79,7 +86,7 @@
 		</p>
 	</div>
 
-	<ul class="grow overflow-y-auto px-2 pb-4">
+	<ul bind:this={list} class="grow overflow-y-auto px-2 pb-4">
 		{#each hits as hit (hit.verse.key)}
 			<li>
 				<a

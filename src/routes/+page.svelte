@@ -22,7 +22,7 @@
 	const suggestions = [1, 18, 36, 55, 67].map((n) => data.chapters[n - 1]);
 </script>
 
-<main class="min-w-0 grow overflow-y-auto">
+<main id="main-content" tabindex="-1" class="min-w-0 grow overflow-y-auto focus:outline-none">
 	<div class="mx-auto max-w-2xl px-4 pt-16 pb-24 sm:px-6 sm:pt-20">
 		<p class="font-arabic text-accent text-center text-5xl">تدبر</p>
 		<h1 class="text-ink mt-6 text-center text-2xl font-semibold tracking-tight">

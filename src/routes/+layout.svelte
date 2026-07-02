@@ -5,6 +5,7 @@
 	import { afterNavigate } from '$app/navigation';
 	import { getSurah } from '$lib/quran/data';
 	import { dur } from '$lib/motion';
+	import { m } from '$lib/paraglide/messages';
 	import { app, arabicFontStacks } from '$lib/app-state.svelte';
 	import ActivityBar from '$lib/components/ActivityBar.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
@@ -13,6 +14,10 @@
 	let { data, children }: LayoutProps = $props();
 
 	function onKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape' && app.mobileSidebarOpen) {
+			app.closeMobileSidebar();
+			return;
+		}
 		if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) return;
 		if (event.key === 'b') {
 			event.preventDefault();
@@ -81,6 +86,12 @@
 <svelte:window onkeydown={onKeydown} />
 
 <div class="flex h-dvh overflow-hidden">
+	<a
+		href="#main-content"
+		class="sr-only focus:not-sr-only focus:bg-surface focus:text-body focus:absolute focus:top-2 focus:left-14 focus:z-50 focus:rounded-lg focus:border focus:border-edge focus:px-3 focus:py-1.5 focus:text-sm focus:shadow-lg"
+	>
+		{m.skip_to_content()}
+	</a>
 	<ActivityBar />
 
 	{#if app.mobileSidebarOpen}

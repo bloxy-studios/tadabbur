@@ -23,6 +23,7 @@
 	let copied = $state(false);
 	let recordNote = $state(false);
 	let playMenuOpen = $state(false);
+	let menuButton: HTMLButtonElement | undefined = $state();
 
 	const isCurrent = $derived(player.current?.surah === surah && player.current.verse === verse.n);
 	// The karaoke highlight follows any playback (whole verse or a selected
@@ -54,11 +55,53 @@
 		recordNote = true;
 		setTimeout(() => (recordNote = false), 1800);
 	}
+
+	// Shortcuts on a focused verse: p play/pause, t tafsir, c copy link.
+	function onArticleKeydown(event: KeyboardEvent) {
+		if (event.metaKey || event.ctrlKey || event.altKey) return;
+		if ((event.target as HTMLElement).closest('[role="menu"], input, textarea')) return;
+		if (event.key === 'p') {
+			event.preventDefault();
+			player.toggle(surah, verse.n);
+		} else if (event.key === 't') {
+			event.preventDefault();
+			tafsirOpen = !tafsirOpen;
+		} else if (event.key === 'c') {
+			event.preventDefault();
+			void copyLink();
+		} else if (event.key === 'Escape' && playMenuOpen) {
+			playMenuOpen = false;
+			menuButton?.focus();
+		}
+	}
+
+	function onMenuKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			event.stopPropagation();
+			playMenuOpen = false;
+			menuButton?.focus();
+			return;
+		}
+		if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+		event.preventDefault();
+		const items = [
+			...(event.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('[role="menuitem"]')
+		];
+		const index = items.indexOf(document.activeElement as HTMLElement);
+		const step = event.key === 'ArrowDown' ? 1 : -1;
+		items[(index + step + items.length) % items.length]?.focus();
+	}
 </script>
 
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions, a11y_no_noninteractive_tabindex -->
 <article
 	id="v{verse.n}"
 	data-verse={verse.n}
+	role="group"
+	aria-label={m.verse_aria({ key: verse.key })}
+	tabindex={mounted ? 0 : -1}
+	onkeydown={onArticleKeydown}
 	class="verse-anchor group border-edge-soft border-b py-6 last:border-b-0 {playMenuOpen
 		? ''
 		: '[content-visibility:auto] [contain-intrinsic-size:auto_190px]'}"
@@ -111,12 +154,14 @@
 							{isPlaying ? m.pause() : m.play()}
 						</button>
 						<button
+							bind:this={menuButton}
 							type="button"
 							class="flex items-center self-stretch rounded-r-[5px] border-l pr-1 pl-0.5 transition-colors
 								{isPlaying || playMenuOpen ? 'border-accent/50' : 'border-edge'}
 								{playMenuOpen ? 'bg-accent-soft text-accent' : 'text-faint hover:bg-edge-soft hover:text-body'}"
 							title={m.playback_options()}
 							aria-label={m.playback_options()}
+							aria-haspopup="menu"
 							aria-expanded={playMenuOpen}
 							onclick={() => (playMenuOpen = !playMenuOpen)}
 						>
@@ -126,14 +171,20 @@
 					{#if playMenuOpen}
 						<button
 							type="button"
+							tabindex="-1"
 							class="fixed inset-0 z-20 cursor-default"
-							aria-label={m.playback_options()}
+							aria-hidden="true"
 							onclick={() => (playMenuOpen = false)}
 						></button>
 						<div
 							transition:fly={{ y: -4, duration: dur(120) }}
 							class="bg-surface absolute top-full left-0 z-30 mt-1 w-52 rounded-lg border border-edge py-1 shadow-lg"
 							role="menu"
+							tabindex="-1"
+							onkeydown={onMenuKeydown}
+							{@attach (node) => {
+								node.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+							}}
 						>
 							<button
 								type="button"

@@ -1,6 +1,8 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
 	"nav_home": "Beranda",
+	"skip_to_content": "Langsung ke konten",
+	"verse_aria": "Ayat {key}",
 	"nav_surahs": "Surah",
 	"nav_search": "Cari",
 	"nav_notes": "Catatan",
