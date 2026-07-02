@@ -115,6 +115,12 @@ class Player {
 	#tick = () => {
 		const audio = this.#audio;
 		if (!audio || !this.#timings || !this.current) return;
+		// While a seek is pending, currentTime still reports the old position —
+		// acting on it would flash the previously played verse (and scroll to it).
+		if (audio.seeking) {
+			if (this.playing) this.#raf = requestAnimationFrame(this.#tick);
+			return;
+		}
 		const t = audio.currentTime * 1000;
 
 		if (this.#stopAt !== null && t >= this.#stopAt) {

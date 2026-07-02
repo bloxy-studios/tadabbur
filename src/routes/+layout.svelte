@@ -13,28 +13,43 @@
 
 	let { data, children }: LayoutProps = $props();
 
-	// F6 / Shift+F6 cycles keyboard focus across visible panes
-	// (activity bar → sidebar → main → info pane).
-	function cyclePanes(backwards: boolean) {
-		const panes = [...document.querySelectorAll<HTMLElement>('[data-pane]')].filter(
+	// Panes in visual order: activity bar, sidebar, main, info pane.
+	function visiblePanes(): HTMLElement[] {
+		return [...document.querySelectorAll<HTMLElement>('[data-pane]')].filter(
 			(pane) => pane.getBoundingClientRect().width > 0
 		);
-		if (!panes.length) return;
-		const current = panes.findIndex((pane) => pane.contains(document.activeElement));
-		const next = panes[(current + (backwards ? -1 : 1) + panes.length) % panes.length];
-		if (next.hasAttribute('tabindex')) {
-			next.focus();
+	}
+
+	function focusPane(pane: HTMLElement | undefined) {
+		if (!pane) return;
+		if (pane.hasAttribute('tabindex')) {
+			pane.focus();
 			return;
 		}
-		next
+		pane
 			.querySelector<HTMLElement>('a[href], button:not([tabindex="-1"]), input, [tabindex="0"]')
 			?.focus();
 	}
 
 	function onKeydown(event: KeyboardEvent) {
+		const noModifiers = !event.metaKey && !event.ctrlKey && !event.altKey;
+		const typing = (event.target as HTMLElement).closest?.('input, textarea');
+
+		// 1–4 jump straight to a pane; F6 / Shift+F6 cycle (a11y standard).
+		if (noModifiers && !typing && event.key >= '1' && event.key <= '4') {
+			const pane = visiblePanes()[Number(event.key) - 1];
+			if (pane) {
+				event.preventDefault();
+				focusPane(pane);
+			}
+			return;
+		}
 		if (event.key === 'F6') {
 			event.preventDefault();
-			cyclePanes(event.shiftKey);
+			const panes = visiblePanes();
+			const current = panes.findIndex((pane) => pane.contains(document.activeElement));
+			const step = event.shiftKey ? -1 : 1;
+			focusPane(panes[(current + step + panes.length) % panes.length]);
 			return;
 		}
 		if (event.key === 'Escape' && app.mobileSidebarOpen) {

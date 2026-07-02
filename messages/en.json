@@ -45,7 +45,7 @@
 	"sc_tafsir": "Toggle tafsir on focused verse",
 	"sc_copy": "Copy focused verse link",
 	"sc_close": "Close menu or drawer",
-	"sc_panes": "Switch pane (Shift reverses)",
+	"sc_panes": "Jump to pane (F6 cycles)",
 	"makkah": "Makkah",
 	"madinah": "Madinah",
 	"tafsir": "Tafsir",
