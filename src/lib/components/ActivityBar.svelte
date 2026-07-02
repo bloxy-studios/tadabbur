@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import { app, type SidebarView } from '$lib/app-state.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import Icon from './Icon.svelte';
@@ -41,6 +42,18 @@
 			<Icon name={item.icon} />
 		</button>
 	{/each}
+
+	<a
+		href={resolve('/progress')}
+		class="flex h-9 w-9 items-center justify-center rounded-lg transition-colors {page.url
+			.pathname === '/progress'
+			? 'bg-accent-soft text-accent'
+			: 'text-faint hover:bg-edge-soft hover:text-body'}"
+		title={m.nav_progress()}
+		aria-label={m.nav_progress()}
+	>
+		<Icon name="chart" />
+	</a>
 
 	<div class="grow"></div>
 
