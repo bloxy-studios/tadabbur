@@ -49,7 +49,16 @@ class Player {
 		return this.#audio;
 	}
 
-	async play(surah: number, verse: number, words?: { from: number; to: number }) {
+	/**
+	 * Plays a verse from its first word. Default stops at the end of the
+	 * ayah; `continuous` keeps reciting through the surah; `words` plays only
+	 * that word range (selection).
+	 */
+	async play(
+		surah: number,
+		verse: number,
+		opts?: { words?: { from: number; to: number }; continuous?: boolean }
+	) {
 		if (!browser) return;
 		const audio = this.#ensure();
 		try {
@@ -62,15 +71,18 @@ class Player {
 			const timing = this.#timings?.verses[verse - 1];
 			if (!timing) return;
 			let startMs = timing.from;
-			this.#stopAt = null;
-			if (words) {
-				const segments = timing.segments.filter((s) => s[0] >= words.from && s[0] <= words.to);
+			this.#stopAt = opts?.continuous ? null : timing.to;
+			this.rangeActive = false;
+			if (opts?.words) {
+				const segments = timing.segments.filter(
+					(s) => s[0] >= opts.words!.from && s[0] <= opts.words!.to
+				);
 				if (segments.length) {
 					startMs = segments[0][1];
 					this.#stopAt = segments[segments.length - 1][2];
+					this.rangeActive = true;
 				}
 			}
-			this.rangeActive = this.#stopAt !== null;
 			this.current = { surah, verse };
 			audio.currentTime = startMs / 1000;
 			await audio.play();
@@ -81,14 +93,14 @@ class Player {
 	}
 
 	/**
-	 * Verse play button: pause if this whole verse is playing; otherwise
-	 * ALWAYS restart the ayah from its beginning — no mid-verse resume, and a
-	 * running selection (word range) playback is simply taken over.
+	 * Verse play button: pause if this verse is playing (whole-ayah or
+	 * continuous); otherwise ALWAYS restart just this ayah from its beginning
+	 * — no mid-verse resume, and a running selection playback is taken over.
 	 */
 	toggle(surah: number, verse: number) {
 		if (!browser) return;
 		const isCurrent = this.current?.surah === surah && this.current.verse === verse;
-		if (this.playing && isCurrent && this.#stopAt === null) {
+		if (this.playing && isCurrent && !this.rangeActive) {
 			this.#ensure().pause();
 			return;
 		}

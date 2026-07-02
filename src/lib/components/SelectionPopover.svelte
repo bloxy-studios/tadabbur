@@ -38,7 +38,7 @@
 		<button
 			type="button"
 			class="bg-accent-soft text-accent flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition-opacity hover:opacity-80"
-			onclick={() => player.play(surah, verse.n, { from, to })}
+			onclick={() => player.play(surah, verse.n, { words: { from, to } })}
 		>
 			<Icon name="play" size={13} />
 			{m.play_selection()}
