@@ -39,21 +39,28 @@ class Player {
 			});
 			this.#audio.addEventListener('ended', () => {
 				this.playing = false;
-				this.current = null;
-				this.currentWord = null;
-				this.rangeActive = false;
-				this.continuous = false;
+				this.#reset();
 				cancelAnimationFrame(this.#raf);
 			});
 			this.#audio.addEventListener('error', () => {
 				this.playing = false;
-				this.current = null;
-				this.currentWord = null;
-				this.rangeActive = false;
-				this.continuous = false;
+				this.#reset();
 			});
 		}
 		return this.#audio;
+	}
+
+	/**
+	 * Clears the now-playing identity so every terminal path (ended, error, a
+	 * missing timing, a failed load, stop) leaves current/rangeActive/continuous
+	 * in sync — otherwise a failed continuous play could strand `continuous` at
+	 * true and light the header button with nothing sounding.
+	 */
+	#reset() {
+		this.current = null;
+		this.currentWord = null;
+		this.rangeActive = false;
+		this.continuous = false;
 	}
 
 	/**
@@ -121,8 +128,7 @@ class Player {
 			}
 			const timing = this.#timings?.verses[verse - 1];
 			if (!timing) {
-				this.current = null;
-				this.rangeActive = false;
+				this.#reset();
 				return;
 			}
 			// QDC verse windows (timestamp_from/to) bleed into neighboring
@@ -152,8 +158,7 @@ class Player {
 			await audio.play();
 		} catch {
 			if (token === this.#playToken) {
-				this.current = null;
-				this.rangeActive = false;
+				this.#reset();
 				this.#loadedKey = '';
 			}
 		} finally {
@@ -190,10 +195,8 @@ class Player {
 		if (!this.#audio) return;
 		this.#playToken++;
 		this.#audio.pause();
-		this.current = null;
+		this.#reset();
 		this.loading = false;
-		this.rangeActive = false;
-		this.continuous = false;
 		this.#stopAt = null;
 	}
 

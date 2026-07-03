@@ -22,6 +22,7 @@
 		if (onThisSurah && !player.continuous) return null;
 		return {
 			...current,
+			onThisSurah,
 			chapter: chapters[current.surah - 1],
 			href: resolve('/surah/[surah]', { surah: String(current.surah) }) + `#v${current.verse}`
 		};
@@ -49,20 +50,31 @@
 					class={player.loading ? 'animate-spin' : ''}
 				/>
 			</button>
-			<!-- eslint-disable svelte/no-navigation-without-resolve -- resolve()d in the derived, plus a #v hash the resolver can't express -->
-			<a
-				href={now.href}
-				class="text-body hover:text-accent flex min-w-0 items-center gap-2 rounded-full py-1 pr-2 pl-1 text-sm font-medium transition-colors"
-				title={m.now_playing()}
-			>
+			{#snippet label()}
 				{#if player.playing}
 					<span class="eq text-accent shrink-0" aria-hidden="true"><i></i><i></i><i></i></span>
 				{/if}
 				<span class="max-w-52 truncate">
 					{now.surah}. {now.chapter.nameSimple} · {m.verse_n({ n: now.verse })}
 				</span>
-			</a>
-			<!-- eslint-enable svelte/no-navigation-without-resolve -->
+			{/snippet}
+			{#if now.onThisSurah}
+				<!-- Already on this surah: the follow-along scroll keeps the reciting
+				     verse in view, so a link here would only yank the reader. Plain text. -->
+				<span class="text-body flex min-w-0 items-center gap-2 py-1 pr-2 pl-1 text-sm font-medium">
+					{@render label()}
+				</span>
+			{:else}
+				<!-- eslint-disable svelte/no-navigation-without-resolve -- resolve()d in the derived, plus a #v hash the resolver can't express -->
+				<a
+					href={now.href}
+					class="text-body hover:text-accent flex min-w-0 items-center gap-2 rounded-full py-1 pr-2 pl-1 text-sm font-medium transition-colors"
+					title={m.now_playing()}
+				>
+					{@render label()}
+				</a>
+				<!-- eslint-enable svelte/no-navigation-without-resolve -->
+			{/if}
 			<button
 				type="button"
 				class="text-faint hover:bg-edge-soft hover:text-body rounded-full p-1.5 transition-colors no-hover:p-2.5"

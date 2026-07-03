@@ -27,8 +27,11 @@
 	// drives both the pressed styling and aria-pressed so they always agree;
 	// `surahSounding` (continuous + this surah + actually playing) is the only
 	// state that shows the pause glyph — a single ayah of this surah reads as
-	// idle play.
+	// idle play. `surahLoading` covers the window after a tap where continuous +
+	// current are set synchronously but the seek hasn't landed yet: show a
+	// spinner (like the pill) rather than a premature "Resume".
 	const isThisContinuous = $derived(player.continuous && player.current?.surah === data.surah);
+	const surahLoading = $derived(isThisContinuous && player.loading);
 	const surahSounding = $derived(isThisContinuous && player.playing);
 
 	const skeletonRows = Array.from({ length: 6 }, (_, i) => i);
@@ -230,6 +233,11 @@
 	// → the top. surahProgress is deliberately not a source — it's a high-water
 	// mark and would fling the reader past where they are.
 	function toggleSurah() {
+		// Load window: continuous/current are set synchronously by play() but the
+		// seek hasn't landed. Ignore the tap — togglePause() here would start audio
+		// from the un-seeked position, racing the in-flight seek. The spinner tells
+		// the user it's already working.
+		if (surahLoading) return;
 		if (isThisContinuous) {
 			player.togglePause();
 			return;
@@ -280,12 +288,27 @@
 					type="button"
 					class="rounded-lg p-2 transition-colors
 						{isThisContinuous ? 'bg-accent-soft text-accent' : 'text-faint hover:bg-edge-soft hover:text-body'}"
-					title={surahSounding ? m.pause() : isThisContinuous ? m.resume() : m.play_surah()}
-					aria-label={surahSounding ? m.pause() : isThisContinuous ? m.resume() : m.play_surah()}
+					title={surahSounding
+						? m.pause()
+						: surahLoading
+							? m.play_surah()
+							: isThisContinuous
+								? m.resume()
+								: m.play_surah()}
+					aria-label={surahSounding
+						? m.pause()
+						: surahLoading
+							? m.play_surah()
+							: isThisContinuous
+								? m.resume()
+								: m.play_surah()}
 					aria-pressed={isThisContinuous}
 					onclick={toggleSurah}
 				>
-					<Icon name={surahSounding ? 'pause' : 'play'} />
+					<Icon
+						name={surahLoading ? 'spinner' : surahSounding ? 'pause' : 'play'}
+						class={surahLoading ? 'animate-spin' : ''}
+					/>
 				</button>
 				<button
 					type="button"
