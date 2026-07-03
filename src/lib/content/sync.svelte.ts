@@ -24,8 +24,56 @@ export const contentSync = $state({
 	// waiting for the async cache diff briefly flashed the app underneath.
 	installing: !dev && typeof caches !== 'undefined' && !isInstalled(),
 	receivedBytes: 0,
-	totalBytes: 0
+	totalBytes: 0,
+	// Reflects the install flag for the settings surface; kept in sync by
+	// syncContent() (true on success) and clearContent() (false).
+	installed: !dev && typeof caches !== 'undefined' ? isInstalled() : false
 });
+
+export interface StorageUsage {
+	/** Bytes this origin uses on the device, or null if the browser won't say. */
+	usage: number | null;
+	/** Total quota available to the origin, or null if unknown. */
+	quota: number | null;
+}
+
+/**
+ * Whole-origin storage estimate (not content-cache-specific — the browser
+ * only reports per-origin). Good enough for a "how much space Tadabbur uses"
+ * readout; returns nulls where the API is unavailable or blocked.
+ */
+export async function estimateUsage(): Promise<StorageUsage> {
+	if (typeof navigator === 'undefined' || !navigator.storage?.estimate) {
+		return { usage: null, quota: null };
+	}
+	try {
+		const { usage, quota } = await navigator.storage.estimate();
+		return { usage: usage ?? null, quota: quota ?? null };
+	} catch {
+		return { usage: null, quota: null };
+	}
+}
+
+/**
+ * Drops the offline content cache and its install flag, so the next visit (or
+ * a manual re-sync) reinstalls from scratch. The app keeps working online —
+ * the service worker just falls back to network fetches until refilled.
+ */
+export async function clearContent(): Promise<void> {
+	if (typeof caches === 'undefined') return;
+	try {
+		await caches.delete(CONTENT_CACHE);
+	} finally {
+		try {
+			localStorage.removeItem(INSTALLED_FLAG);
+		} catch {
+			// storage blocked — flag was best-effort anyway
+		}
+		contentSync.installed = false;
+		contentSync.receivedBytes = 0;
+		contentSync.totalBytes = 0;
+	}
+}
 
 /**
  * First visit installs the content packs (4 bundled requests, ~6MB gzipped)
@@ -34,8 +82,23 @@ export const contentSync = $state({
  * Later visits fill small gaps (e.g. partial cache eviction) silently, or
  * re-install a pack if most of it is gone.
  */
-export async function syncContent(): Promise<void> {
-	if (dev || typeof caches === 'undefined') return;
+export function syncContent(): Promise<void> {
+	if (dev || typeof caches === 'undefined') return Promise.resolve();
+	// Dedupe concurrent callers onto one run — the first-visit setup screen and
+	// a manual re-sync from settings both target the shared contentSync state,
+	// and two overlapping runs would double-count bytes and flip `installing`
+	// off (the finally) while the other is still downloading.
+	if (!inFlight) {
+		inFlight = runSync().finally(() => {
+			inFlight = null;
+		});
+	}
+	return inFlight;
+}
+
+let inFlight: Promise<void> | null = null;
+
+async function runSync(): Promise<void> {
 	try {
 		const cache = await caches.open(CONTENT_CACHE);
 		const { packs } = (await (await fetch('/pack/manifest.json')).json()) as { packs: Pack[] };
@@ -64,6 +127,7 @@ export async function syncContent(): Promise<void> {
 		} catch {
 			// storage blocked — the flag is only a fast path, the cache diff still works
 		}
+		contentSync.installed = true;
 	} finally {
 		contentSync.installing = false;
 	}
