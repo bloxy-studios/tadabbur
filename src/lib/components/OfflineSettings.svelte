@@ -9,6 +9,8 @@
 		syncContent,
 		clearContent,
 		estimateUsage,
+		syncPct,
+		formatMb,
 		type StorageUsage
 	} from '$lib/content/sync.svelte';
 
@@ -17,10 +19,9 @@
 	let usage = $state<StorageUsage>({ usage: null, quota: null });
 	let confirmingClear = $state(false);
 	let cleared = $state(false);
-	// Local pending flag: syncContent() only flips contentSync.installing when a
-	// whole pack needs installing, so a verify/gap-fill run would otherwise show
-	// no feedback. This tracks the await regardless.
-	let busy = $state(false);
+	// Set when a re-sync couldn't finish — the offline user (exactly who taps
+	// "Check for updates") would otherwise get a silent no-op.
+	let failed = $state(false);
 
 	async function refreshUsage() {
 		usage = await estimateUsage();
@@ -28,28 +29,33 @@
 
 	onMount(refreshUsage);
 
-	// syncContent() drives contentSync.receivedBytes/totalBytes; mirror the same
-	// percentage the first-run setup screen shows.
-	const pct = $derived(
-		contentSync.totalBytes
-			? Math.min(100, Math.floor((contentSync.receivedBytes / contentSync.totalBytes) * 100))
-			: 0
+	// `syncing` is the shared flag from the dedupe wrapper, so a sync started
+	// anywhere (first-run, load-time gap fill) is reflected here too — the panel
+	// can't show idle while a background run is live.
+	const busy = $derived(contentSync.syncing || contentSync.clearing);
+	// A real download shows the byte percentage; a quiet verify (no packs
+	// downloading) just reads "Checking…".
+	const busyLabel = $derived(
+		contentSync.downloading ? m.offline_downloading({ pct: syncPct() }) : m.offline_verifying()
 	);
-	const usedMb = $derived(usage.usage != null ? (usage.usage / 1e6).toFixed(1) : null);
+	const usedMb = $derived(usage.usage != null ? formatMb(usage.usage) : null);
 
 	async function resync() {
 		cleared = false;
-		busy = true;
+		failed = false;
 		try {
 			await syncContent();
 			await refreshUsage();
-		} finally {
-			busy = false;
+		} catch {
+			// Manifest/pack fetch rejected (typically offline) — syncContent leaves
+			// `installed` untouched; surface it so the tap isn't a silent no-op.
+			failed = true;
 		}
 	}
 
 	async function clear() {
 		confirmingClear = false;
+		failed = false;
 		await clearContent();
 		cleared = true;
 		await refreshUsage();
@@ -76,7 +82,7 @@
 				</h3>
 				<p class="text-faint mt-0.5 text-xs leading-relaxed">
 					{#if busy}
-						{contentSync.totalBytes ? m.offline_downloading({ pct }) : m.offline_verifying()}
+						{busyLabel}
 					{:else if usedMb != null}
 						{m.offline_storage_used({ size: usedMb })}
 					{:else}
@@ -94,7 +100,7 @@
 				>
 					{#if busy}
 						<Icon name="spinner" size={14} class="animate-spin shrink-0" />
-						{contentSync.totalBytes ? m.offline_downloading({ pct }) : m.offline_verifying()}
+						{busyLabel}
 					{:else}
 						<Icon name="book" size={14} class="shrink-0" />
 						{m.offline_resync()}
@@ -112,7 +118,8 @@
 						</button>
 						<button
 							type="button"
-							class="rounded-lg border border-edge px-3 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-edge-soft"
+							class="rounded-lg border border-edge px-3 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-edge-soft disabled:opacity-60"
+							disabled={busy}
 							onclick={clear}
 						>
 							{m.offline_clear_confirm()}
@@ -131,7 +138,16 @@
 			</div>
 		</div>
 
-		{#if cleared}
+		{#if failed}
+			<p
+				class="mt-3 text-xs text-red-500"
+				role="status"
+				aria-live="polite"
+				transition:fly={{ y: -4, duration: dur(120) }}
+			>
+				{m.offline_error()}
+			</p>
+		{:else if cleared}
 			<p
 				class="text-faint mt-3 text-xs"
 				role="status"

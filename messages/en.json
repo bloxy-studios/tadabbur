@@ -88,6 +88,7 @@
 	"offline_clear_confirm": "Clear it?",
 	"offline_clear_cancel": "Keep",
 	"offline_cleared": "Offline data cleared",
+	"offline_error": "Couldn’t update offline data. Check your connection and try again.",
 	"search_min_chars": "Type at least 3 characters",
 	"search_results": "{count} results",
 	"search_hint": "Searches translation and Arabic text, fully on-device",
